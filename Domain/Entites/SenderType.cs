@@ -1,0 +1,12 @@
+﻿using Domain.Common;
+
+namespace Domain.Entites;
+
+public partial class SenderType : IBaseEntity
+{
+    public int Id { get; set; }
+
+    public string SenderType1 { get; set; } = null!;
+
+    public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
+}

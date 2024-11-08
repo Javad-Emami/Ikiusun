@@ -1,4 +1,7 @@
-﻿using Microsoft.OpenApi.Models;
+﻿using Application;
+using Microsoft.OpenApi.Models;
+using Persistance;
+using Service;
 
 namespace WebApi.Extensions;
 
@@ -31,6 +34,10 @@ public static class ServiceExtension
         #endregion
 
         services.AddControllers();
+
+        services.AddApplication(configuration)
+                .AddPersistance(configuration)
+                .AddService(configuration);
 
         services.AddLogging();
         return services;

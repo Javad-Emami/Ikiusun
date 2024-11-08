@@ -1,4 +1,5 @@
 ﻿using Swashbuckle.AspNetCore.SwaggerUI;
+using WebApi.Extensions.Middlewares;
 
 namespace WebApi.Extensions;
 
@@ -27,7 +28,7 @@ public static class ApplicationExtension
             app.UseHttpsRedirection();
         }
 
-        //app.UseMiddleware();
+        app.UseMiddleware<CustomExceptionMiddleware>();
         app.UseAuthentication();
         app.UseAuthorization();
 
