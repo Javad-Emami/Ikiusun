@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿namespace Domain.Entites;
 
-namespace Domain.Entites;
-
-public partial class Withdrawal
+public class Withdrawal
 {
     public Guid Id { get; set; }
 

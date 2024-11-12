@@ -2,7 +2,7 @@
 
 namespace Domain.Entites;
 
-public partial class Otp : IBaseEntity<Guid>
+public class Otp : IBaseEntity<Guid>
 {
     public Guid Id { get; set; }
 

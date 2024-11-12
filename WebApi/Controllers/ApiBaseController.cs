@@ -11,5 +11,9 @@ public class ApiBaseController : ControllerBase
     {
         
     }
-    protected IMediator Mediator => (IMediator)HttpContext.RequestServices.GetServices<IMediator>();   
+
+    private IMediator _mediator;
+
+    protected IMediator Mediator => _mediator ??= HttpContext.RequestServices.GetService<IMediator>();
+    //protected IMediator Mediator => HttpContext.RequestServices.GetServices<IMediator>();   
 }

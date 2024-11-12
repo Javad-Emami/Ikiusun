@@ -2,7 +2,7 @@
 
 namespace Domain.Entites;
 
-public partial class UserRequest : IBaseEntity<Guid>
+public class UserRequest : IBaseEntity<Guid>
 {
     public Guid Id { get; set; }
 

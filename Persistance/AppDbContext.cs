@@ -1,9 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Domain.Entites;
+using Application.Interfaces;
 
 namespace Persistance;
 
-public partial class AppDbContext : DbContext
+public partial class AppDbContext : DbContext,IAppDbContext
 {
     public AppDbContext()
     {
@@ -25,6 +26,8 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Pricing> Pricings { get; set; }
 
+    public virtual DbSet<Role> Roles { get; set; }
+
     public virtual DbSet<SenderType> SenderTypes { get; set; }
 
     public virtual DbSet<ServiceModel> ServiceModels { get; set; }
@@ -41,6 +44,7 @@ public partial class AppDbContext : DbContext
     {
 
     }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Attachment>(entity =>
@@ -137,6 +141,13 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("FK_Pricing_ServiceModel");
         });
 
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.ToTable("Role");
+
+            entity.Property(e => e.RoleName).HasMaxLength(50);
+        });
+
         modelBuilder.Entity<SenderType>(entity =>
         {
             entity.ToTable("SenderType");
@@ -160,6 +171,27 @@ public partial class AppDbContext : DbContext
         {
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CreationDate).HasColumnType("datetime");
+            entity.Property(e => e.Mobile)
+                .HasMaxLength(11)
+                .IsUnicode(false)
+                .IsFixedLength();
+
+            entity.HasMany(d => d.Roles).WithMany(p => p.Users)
+                .UsingEntity<Dictionary<string, object>>(
+                    "UserRole",
+                    r => r.HasOne<Role>().WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_UserRole_Role"),
+                    l => l.HasOne<User>().WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_UserRole_User"),
+                    j =>
+                    {
+                        j.HasKey("UserId", "RoleId").HasName("PK_User_Role");
+                        j.ToTable("UserRole");
+                    });
         });
 
         modelBuilder.Entity<UserRequest>(entity =>

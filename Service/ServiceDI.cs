@@ -1,13 +1,19 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Application.Interfaces;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Service.Services;
 
-namespace Service
+namespace Service;
+
+public static class ServiceDI
 {
-    public static class ServiceDI
+    public static IServiceCollection AddService(this IServiceCollection services,IConfiguration configuration) 
     {
-        public static IServiceCollection AddService(this IServiceCollection services,IConfiguration configuration) 
-        {
-            return services;
-        }
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IRoleService, RoleService>();
+        services.AddScoped<IOtpService, OtpService>();
+        services.AddScoped<IOpenAi_ChatGPT, OpenAi_ChatGpt>();
+
+        return services;
     }
 }

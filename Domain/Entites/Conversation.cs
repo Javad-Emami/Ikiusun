@@ -2,7 +2,7 @@
 
 namespace Domain.Entites;
 
-public partial class Conversation : IBaseEntity<Guid>
+public class Conversation : IBaseEntity<Guid>
 {
     public Guid Id { get; set; }
 

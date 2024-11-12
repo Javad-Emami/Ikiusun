@@ -17,6 +17,8 @@ public interface IAppDbContext
 
      DbSet<Pricing> Pricings { get; set; }
 
+     DbSet<Role> Roles { get; set; }
+
      DbSet<SenderType> SenderTypes { get; set; }
 
      DbSet<ServiceModel> ServiceModels { get; set; }

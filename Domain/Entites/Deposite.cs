@@ -2,7 +2,7 @@
 
 namespace Domain.Entites;
 
-public partial class Deposite : IBaseEntity<Guid>
+public class Deposite : IBaseEntity<Guid>
 {
     public Guid Id { get; set; }
 

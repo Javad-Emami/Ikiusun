@@ -2,7 +2,7 @@
 
 namespace Domain.Entites;
 
-public partial class Pricing : IBaseEntity<Guid>
+public class Pricing : IBaseEntity<Guid>
 {
     public Guid Id { get; set; }
 

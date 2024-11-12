@@ -2,7 +2,7 @@
 
 namespace Domain.Entites;
 
-public partial class Attachment:IBaseEntity<Guid>
+public class Attachment:IBaseEntity<Guid>
 {
     public Guid Id { get; set; }
 

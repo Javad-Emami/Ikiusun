@@ -3,6 +3,6 @@ using Domain.Entites;
 
 namespace Application.Interfaces;
 
-public interface IUserService: IBaseService<User,Guid>
+public interface IRoleService: IBaseService<Role>
 {
 }

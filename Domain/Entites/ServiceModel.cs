@@ -2,7 +2,7 @@
 
 namespace Domain.Entites;
 
-public partial class ServiceModel : IBaseEntity<Guid>
+public class ServiceModel : IBaseEntity<Guid>
 {
     public Guid Id { get; set; }
 

@@ -2,11 +2,11 @@
 
 namespace Domain.Entites;
 
-public partial class User : IBaseEntity<Guid>
+public class User : IBaseEntity<Guid>
 {
     public Guid Id { get; set; }
 
-    public byte Mobile { get; set; }
+    public string Mobile { get; set; } = null!;
 
     public DateTime CreationDate { get; set; }
 
@@ -17,4 +17,6 @@ public partial class User : IBaseEntity<Guid>
     public virtual ICollection<UserRequest> UserRequests { get; set; } = new List<UserRequest>();
 
     public virtual Wallet? Wallet { get; set; }
+
+    public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
 }
