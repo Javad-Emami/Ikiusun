@@ -8,7 +8,7 @@ public class UserRequest : IBaseEntity<Guid>
 
     public Guid ConversationId { get; set; }
 
-    public Guid ServiceModelId { get; set; }
+    public int ServiceModelId { get; set; }
 
     public Guid UserId { get; set; }
 

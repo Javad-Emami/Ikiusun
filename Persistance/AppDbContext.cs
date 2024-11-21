@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Domain.Entites;
 using Application.Interfaces;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace Persistance;
 
@@ -17,6 +18,8 @@ public partial class AppDbContext : DbContext,IAppDbContext
     public virtual DbSet<Attachment> Attachments { get; set; }
 
     public virtual DbSet<Conversation> Conversations { get; set; }
+
+    public virtual DbSet<CurrencyExchangeRate> CurrencyExchangeRates { get; set; }
 
     public virtual DbSet<Deposite> Deposites { get; set; }
 
@@ -39,6 +42,8 @@ public partial class AppDbContext : DbContext,IAppDbContext
     public virtual DbSet<Wallet> Wallets { get; set; }
 
     public virtual DbSet<Withdrawal> Withdrawals { get; set; }
+
+    public DatabaseFacade datbase => Database;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -68,9 +73,7 @@ public partial class AppDbContext : DbContext,IAppDbContext
             entity.ToTable("Conversation");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.EndedAt).HasColumnType("datetime");
-            entity.Property(e => e.StartedAt).HasColumnType("datetime");
-
+  
             entity.HasOne(d => d.ServiceModel).WithMany(p => p.Conversations)
                 .HasForeignKey(d => d.ServiceModelId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -80,6 +83,15 @@ public partial class AppDbContext : DbContext,IAppDbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Conversation_User");
+        });
+
+        modelBuilder.Entity<CurrencyExchangeRate>(entity =>
+        {
+            entity.ToTable("CurrencyExchangeRate");
+
+            entity.Property(e => e.CurrencyExchangeRate1)
+                .HasColumnType("decimal(18, 0)")
+                .HasColumnName("CurrencyExchangeRate");
         });
 
         modelBuilder.Entity<Deposite>(entity =>
@@ -135,6 +147,11 @@ public partial class AppDbContext : DbContext,IAppDbContext
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.UnitCost).HasColumnType("decimal(10, 2)");
 
+            entity.HasOne(d => d.CurrencyExchangeRate).WithMany(p => p.Pricings)
+                .HasForeignKey(d => d.CurrencyExchangeRateId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Pricing_CurrencyExchange");
+
             entity.HasOne(d => d.ServiceModel).WithMany(p => p.Pricings)
                 .HasForeignKey(d => d.ServiceModelId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -162,8 +179,6 @@ public partial class AppDbContext : DbContext,IAppDbContext
             entity.ToTable("ServiceModel");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.CreationDate).HasColumnType("datetime");
-            entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.SeviceName).HasMaxLength(50);
         });
 

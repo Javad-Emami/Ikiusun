@@ -2,17 +2,11 @@
 
 namespace Domain.Entites;
 
-public class ServiceModel : IBaseEntity<Guid>
+public class ServiceModel : IBaseEntity
 {
-    public Guid Id { get; set; }
+    public int Id { get; set; }
 
     public string SeviceName { get; set; } = null!;
-
-    public string? Description { get; set; }
-
-    public bool IsActive { get; set; }
-
-    public DateTime CreationDate { get; set; }
 
     public virtual ICollection<Conversation> Conversations { get; set; } = new List<Conversation>();
 

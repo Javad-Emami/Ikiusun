@@ -12,7 +12,10 @@ public static class ServiceDI
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<IOtpService, OtpService>();
-        services.AddScoped<IOpenAi_ChatGPT, OpenAi_ChatGpt>();
+        services.AddScoped<IConversationService, ConversationService>();
+        services.AddScoped<IMessageService, MessageService>();
+        services.AddScoped<IOpenAi_ChatModel, OpenAi_ChatModel>();
+        services.AddScoped<IOpenAI_ImageModel, OpenAI_ImageModel>();
 
         return services;
     }

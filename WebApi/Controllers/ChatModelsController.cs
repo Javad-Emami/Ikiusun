@@ -1,14 +1,17 @@
-﻿using Domain.Common;
+﻿using Application.Features.ChatModels.GPT_3._5Turbo.Dto;
+using Application.Features.ChatModels.GPT_3._5Turbo.Query;
+using Domain.Common;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApi.Controllers
 {
     public class ChatModelsController : ApiBaseController
     {
-        public async Task<ActionResult<ApiResult<bool>>> GPTThreePointFiveTurbo(CancellationToken cancellationToken) 
+        [HttpPost("GPTThreePointFiveTurbo")]
+        public async Task<ActionResult<ApiResult<ChatResponseDto>>> GPTThreePointFiveTurbo(ChatRequestDto dto,CancellationToken cancellationToken) 
         {
-            var result = await Mediator.Send(new GPTThreePointFiveTurboQuery(), cancellationToken);
-            return new ApiResult<bool>(true);
+            var result = await Mediator.Send(new GPTThreePointFiveTurboCommand(dto), cancellationToken);
+            return new ApiResult<ChatResponseDto>(result);
         }
 
     }

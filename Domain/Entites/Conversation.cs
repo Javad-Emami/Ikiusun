@@ -8,11 +8,9 @@ public class Conversation : IBaseEntity<Guid>
 
     public Guid UserId { get; set; }
 
-    public Guid ServiceModelId { get; set; }
+    public int ServiceModelId { get; set; }
 
-    public DateTime StartedAt { get; set; }
-
-    public DateTime EndedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 
