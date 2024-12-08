@@ -1,45 +1,38 @@
-﻿using Application.Features.ChatModels.GPT_3._5Turbo.Dto;
-using Application.Interfaces;
+﻿using Application.Features.ChatModels.GPT_4o.Dto;
+using Application.Features.ChatModels.Gpt_4oMini.Dto;
+using Application.Interfaces.Gpt_4oMini;
 using Domain.Enums;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using OpenAI.Chat;
 
+namespace Service.Services.Gpt_4oMini;
 
-namespace Service.Services;
-
-public class OpenAi_ChatModel : IOpenAi_ChatModel
+public class OpenAI_ChatGPT4oMiniVisionCapability : IOpenAI_ChatGPT4oMiniVisionCapability
 {
     private readonly string _openAIKey;
-    public OpenAi_ChatModel(IConfiguration configuration)
+    public OpenAI_ChatGPT4oMiniVisionCapability(IConfiguration configuration)
     {
         _openAIKey = configuration.GetSection("OpenAI")["Key"];
     }
-    public async Task<ChatResponseDto> GetChatCompletion(string text)
+    public async Task<Gpt4oMiniResponseDto> GetChatCompletion(string text)
     {
-        ChatClient client = new(model: "gpt-3.5-turbo", apiKey: _openAIKey);
+        ChatClient client = new(model: "gpt-4o-mini-2024-07-18", apiKey: _openAIKey);
 
         var result = await client.CompleteChatAsync(text);
-        
-        var dto = new ChatResponseDto()
+
+        var dto = new Gpt4oMiniResponseDto()
         {
             Content = result.Value.Content[0].Text,
             InputToken = result.Value.Usage.InputTokenCount,
             OutputToken = result.Value.Usage.OutputTokenCount,
         };
-        return dto; 
-        
-        // result.Value.Content[0].Text;
-
-        //var api = new OpenAI(_openAIKey);
-        //var model = Model.ChatGPTTurbo_1106;
-        //var result = await api.Completions.CreateCompletionAsync(new OpenAI_API.Completions.CompletionRequest(text,model: model,temperature:0.1));
-        //var tokens = result.Usage.TotalTokens;
-        //return result.Completions[0].Text;
+        return dto;
     }
 
-    public async Task<ChatResponseDto> GetChatCompletion(List<ChatMessagesDto> messages)
+    public async Task<Gpt4oMiniResponseDto> GetChatCompletion(List<ChatGpt4oMiniMessagesDto> messages)
     {
-        ChatClient client = new(model: "gpt-3.5-turbo", apiKey: _openAIKey);
+        ChatClient client = new(model: "gpt-4o-mini-2024-07-18", apiKey: _openAIKey);
 
         var messagesHistory = new List<ChatMessage>();
         foreach (var message in messages)
@@ -54,12 +47,17 @@ public class OpenAi_ChatModel : IOpenAi_ChatModel
 
         var result = await client.CompleteChatAsync(messagesHistory);
 
-        var dto = new ChatResponseDto()
+        var dto = new Gpt4oMiniResponseDto()
         {
             Content = result.Value.Content[0].Text,
             InputToken = result.Value.Usage.InputTokenCount,
             OutputToken = result.Value.Usage.OutputTokenCount
         };
         return dto;
+    }
+
+    public async Task<Gpt4oMiniResponseDto> GetChatCompletionWithVision(List<IFormFile> images, string prompt)
+    {
+        throw new NotImplementedException();
     }
 }

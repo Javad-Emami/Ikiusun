@@ -1,5 +1,6 @@
-﻿using Application.Features.ChatModels.GPT_3._5Turbo.Dto;
+﻿using Application.Features.ChatModels.Gpt_4oMini.Dto;
 using Application.Interfaces;
+using Application.Interfaces.Gpt_4oMini;
 using AutoMapper;
 using Domain.Common;
 using Domain.Entites;
@@ -7,37 +8,37 @@ using Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace Application.Features.ChatModels.GPT_3._5Turbo.Query;
+namespace Application.Features.ChatModels.Gpt_4oMini.Command;
 
-public class GPTThreePointFiveTurboCommand: IRequest<ChatResponseDto>
+public class ChatGpt4oMiniVisionCapibilityCommand:IRequest<Gpt4oMiniResponseDto>
 {
-    public GPTThreePointFiveTurboCommand(ChatRequestDto data)
+    public ChatGpt4oMiniVisionCapibilityCommand(Gpt4oMiniRequestDto data)
     {
         Data = data;
     }
-    public ChatRequestDto Data { get; }
+    public Gpt4oMiniRequestDto Data { get; }
 }
 
-public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointFiveTurboCommand, ChatResponseDto>
+public class ChatGpt4oMiniVisionCapibilityCommandHandler : IRequestHandler<ChatGpt4oMiniVisionCapibilityCommand, Gpt4oMiniResponseDto>
 {
-    private readonly IOpenAi_ChatGPT3Point5Turbo _openAi_ChatGpt;
+    private readonly IOpenAI_ChatGPT4oMiniVisionCapability _openAi_ChatGpt4oMiniVision;
     private readonly IConversationService _conversationService;
     private readonly IMessageService _messageService;
     private readonly IMapper _mapper;
     private readonly IUserService _userService;
     private readonly IAppDbContext _appDbContext;
-    public GPTThreePointFiveTurboQueryHandler(IOpenAi_ChatGPT3Point5Turbo openAi_ChatGpt, IConversationService conversationService,
-                                              IMessageService messageService, IMapper mapper, IUserService userService, 
-                                              IAppDbContext appDbContext)
+    public ChatGpt4oMiniVisionCapibilityCommandHandler(IOpenAI_ChatGPT4oMiniVisionCapability openAi_ChatGpt4oMiniVision, 
+                                                       IConversationService conversationService, IMessageService messageService, 
+                                                       IMapper mapper, IUserService userService, IAppDbContext appDbContext)
     {
-        _openAi_ChatGpt = openAi_ChatGpt;
+        _openAi_ChatGpt4oMiniVision = openAi_ChatGpt4oMiniVision;
         _conversationService = conversationService;
         _messageService = messageService;
         _mapper = mapper;
         _userService = userService;
         _appDbContext = appDbContext;
     }
-    public async Task<ChatResponseDto> Handle(GPTThreePointFiveTurboCommand request, CancellationToken cancellationToken)
+    public async Task<Gpt4oMiniResponseDto> Handle(ChatGpt4oMiniVisionCapibilityCommand request, CancellationToken cancellationToken)
     {
         await using var transaction = await _appDbContext.datbase.BeginTransactionAsync(cancellationToken);
         try
@@ -59,11 +60,11 @@ public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointF
                 };
                 await _messageService.AddAsync(newMessage);
 
-                var MessagesDtoList = new List<ChatMessagesDto>();
+                var MessagesDtoList = new List<ChatGpt4oMiniMessagesDto>();
 
                 foreach (var item in messages)
                 {
-                    var dto = new ChatMessagesDto()
+                    var dto = new ChatGpt4oMiniMessagesDto()
                     {
                         Content = item.Content,
                         SenderTypeId = item.SenderType,
@@ -71,12 +72,10 @@ public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointF
                     MessagesDtoList.Add(dto);
                 }
 
-                MessagesDtoList.Add(_mapper.Map<ChatMessagesDto>(newMessage));
+                MessagesDtoList.Add(_mapper.Map<ChatGpt4oMiniMessagesDto>(newMessage));
 
-                var openAIResult = await _openAi_ChatGpt.GetChatCompletion(MessagesDtoList);
-
+                var openAIResult = await _openAi_ChatGpt4oMiniVision.GetChatCompletion(MessagesDtoList);
                 openAIResult.ConversationId = conversation.Id;
-
                 //TODO: Calling Cost calculation Service
 
                 var newUserRequest = new UserRequest()
@@ -84,7 +83,7 @@ public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointF
                     ConversationId = conversation.Id,
                     UserId = conversation.UserId,
                     RequestTime = DateTime.Now,
-                    ServiceModelId = (int)ServiceModelEnum.dalle3,
+                    ServiceModelId = (int)ServiceModelEnum.gpt4omini,
                     InputToken = openAIResult.InputToken,
                     OutputTokent = openAIResult.OutputToken,
                     //Cost = 
@@ -128,7 +127,11 @@ public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointF
 
                 await _messageService.AddAsync(newMessage);
 
-                var openAIResult = await _openAi_ChatGpt.GetChatCompletion(request.Data.Text);
+
+                var openAIResult = request.Data.Images != null ?
+                    await _openAi_ChatGpt4oMiniVision.GetChatCompletionWithVision(request.Data.Images, request.Data.Text) :
+                    await _openAi_ChatGpt4oMiniVision.GetChatCompletion(request.Data.Text);
+
                 openAIResult.ConversationId = newConversation.Id;
 
                 //TODO: Calling Cost calculation Service
@@ -138,7 +141,7 @@ public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointF
                     ConversationId = newConversation.Id,
                     UserId = user.Id,
                     RequestTime = DateTime.Now,
-                    ServiceModelId = (int)ServiceModelEnum.dalle3,
+                    ServiceModelId = (int)ServiceModelEnum.gpt4omini,
                     InputToken = openAIResult.InputToken,
                     OutputTokent = openAIResult.OutputToken,
                     //Cost = 
@@ -163,8 +166,8 @@ public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointF
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            throw new CustomException(500, "Gpt-3.5 Turbo occured an exception!" + "=>" + ex.Message);
+            throw new CustomException(500, "Gpt-4o-mini occured an exception!" + "=>" + ex.Message);
         }
-       
     }
 }
+

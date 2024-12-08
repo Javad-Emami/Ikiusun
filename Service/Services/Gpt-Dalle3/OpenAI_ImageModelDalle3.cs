@@ -1,18 +1,16 @@
 ﻿using Application.Features.ImageModels.Dall_E_3.Dto;
 using Application.Interfaces;
-using Domain.Entites;
 using Domain.Enums;
 using Microsoft.Extensions.Configuration;
 using OpenAI.Images;
-using System.Reflection;
 
 namespace Service.Services;
 
-public class OpenAI_ImageModel : IOpenAI_ImageModel
+public class OpenAI_ImageModelDalle3 : IOpenAI_ImageModelDalle3
 {
     private readonly string _openAIKey;
     private readonly IUserRequestService _userRequestService;
-    public OpenAI_ImageModel(IConfiguration configuration, IUserRequestService userRequestService)
+    public OpenAI_ImageModelDalle3(IConfiguration configuration, IUserRequestService userRequestService)
     {
         _openAIKey = configuration.GetSection("OpenAI")["Key"];
         _userRequestService = userRequestService;

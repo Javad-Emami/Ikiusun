@@ -173,7 +173,7 @@ public interface IBaseRepository<TModel, TKey> where TModel : class, IBaseEntity
 
     Task RemoveAsync(TModel? model, CancellationToken cancellationToken = default);
 
-    Task RemoveRangeAsync(TModel[] models, CancellationToken cancellationToken = default);
+    Task RemoveRangeAsync(IEnumerable<TModel?> models, CancellationToken cancellationToken = default);
 
 }
 

@@ -8,15 +8,20 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Domain.Common;
 
 namespace WebApi.Controllers;
 
 public class AccountController : ApiBaseController
 {
     private readonly string _jwtKey;
+    private readonly string _issuer;
+    private readonly string _audience;
     public AccountController(IConfiguration configuration)
     {
         _jwtKey = configuration.GetSection("Jwt")["Key"];
+        _issuer = configuration.GetSection("Jwt")["Issuer"];
+        _audience = configuration.GetSection("Jwt")["Audience"];
     }
 
     [HttpPost("registration")]
@@ -24,11 +29,11 @@ public class AccountController : ApiBaseController
     {
         var userIsExist = await Mediator.Send(new GetUserQuery(mobileNumber),cancellationToken);
         //if (userIsExist) 
-        return RedirectToRoute("DefaultApi", new { controller = "Account", action = "Login" });
+        return Ok(userIsExist);//("DefaultApi", new { controller = "Account", action = "login" });
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginDto dto, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResult<string>>> Login([FromBody] LoginDto dto, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(new LoginUserQuery(dto), cancellationToken);
         var token = GenerateJwtToken(result);
@@ -42,7 +47,7 @@ public class AccountController : ApiBaseController
 
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
-            return Ok(token);
+            return new ApiResult<string>(token);
         }
 
         return Unauthorized();
@@ -50,19 +55,22 @@ public class AccountController : ApiBaseController
 
     private string GenerateJwtToken(UserDto dto)
     {
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_jwtKey);
-        var tokenDescriptor = new SecurityTokenDescriptor
+        var claims = new[]
         {
-            Subject = new ClaimsIdentity(new Claim[]
-            {
-                new Claim(ClaimTypes.Name, dto.Mobile),
-                //new Claim(ClaimTypes.Email, user.Email)
-            }),
-            Expires = DateTime.UtcNow.AddDays(7),
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            new Claim("mobile", dto.Mobile),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtKey));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: _issuer,
+            audience: _audience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddDays(30),
+            signingCredentials: creds);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

@@ -12,6 +12,8 @@ public class Conversation : IBaseEntity<Guid>
 
     public DateTime CreatedAt { get; set; }
 
+    public string ConversationName { get; set; }
+
     public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 
     public virtual ServiceModel ServiceModel { get; set; } = null!;

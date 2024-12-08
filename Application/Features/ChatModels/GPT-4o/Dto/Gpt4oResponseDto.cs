@@ -1,6 +1,6 @@
-﻿namespace Application.Features.ChatModels.GPT_3._5Turbo.Dto;
+﻿namespace Application.Features.ChatModels.GPT_4o.Dto;
 
-public class ChatResponseDto
+public class Gpt4oResponseDto
 {
     public Guid ConversationId { get; set; }
     public string Content { get; set; }

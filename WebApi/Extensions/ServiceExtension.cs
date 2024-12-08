@@ -1,4 +1,5 @@
 ﻿using Application;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -12,15 +13,6 @@ public static class ServiceExtension
 {
     public static IServiceCollection Config(this IServiceCollection services,IConfiguration configuration)
     {
-        services.AddSwaggerGen(c =>
-        {
-            c.SwaggerDoc("v1", new OpenApiInfo
-            {
-                Title = "Ikiusun AI Application",
-                Version = "v1",
-            });
-        });
-
         #region CoresPolicy
         //services.AddCors(o => o.AddPolicy("CoresPolicy", builder =>
         //{
@@ -38,6 +30,8 @@ public static class ServiceExtension
             x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             x.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            x.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            x.DefaultChallengeScheme= CookieAuthenticationDefaults.AuthenticationScheme;
         })
         .AddCookie(o =>
             {
@@ -73,18 +67,52 @@ public static class ServiceExtension
             o.SaveToken = true;
             o.TokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer = false,
-                ValidateAudience = false,
+                ValidateIssuer = true,
+                ValidateAudience = true,
                 ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,               
-                ValidIssuer = configuration.GetSection("JWT")["Key"],
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = configuration.GetSection("JWT")["Issuer"],
+                ValidAudience = configuration.GetSection("JWT")["Audience"],
                 ClockSkew = TimeSpan.Zero,
-                //ValidAudience = builder.Configuration["JWT:Audience"],
                 IssuerSigningKey = new SymmetricSecurityKey(key)
             };
         });
 
         #endregion
+        services.AddEndpointsApiExplorer();
+        services.AddSwaggerGen(opt =>
+        {
+            opt.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "Ikiusun AI Application",
+                Version = "v1",
+            });
+            opt.AddSecurityDefinition("Bearer ", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Name = "Authentication",
+                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                Description = "Please Enter Your Token with this format: 'Bearer YOUR_TOKEN'",
+                Type = SecuritySchemeType.ApiKey, //Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                BearerFormat = "JWT",
+                Scheme = JwtBearerDefaults.AuthenticationScheme
+            });
+            opt.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Name = "Bearer",
+                        In = ParameterLocation.Header,
+                        Reference = new OpenApiReference
+                        {
+                            Id = JwtBearerDefaults.AuthenticationScheme,
+                            Type = ReferenceType.SecurityScheme,
+                        }
+                    },
+                    new List<string>()
+                }
+            });
+        });
 
         services.AddControllers();
         services.AddHttpClient();

@@ -2,7 +2,7 @@
 
 namespace Application.Interfaces;
 
-public interface IOpenAI_ImageModel
+public interface IOpenAI_ImageModelDalle3
 {
     Task<ImageResponseDto> GenerateImege(ImageRequestDto imageRequestDto);
 }

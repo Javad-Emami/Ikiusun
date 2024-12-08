@@ -125,7 +125,7 @@ public abstract class EFBaseRepository<TDbContext, TModel, TKey> : IEFBaseReposi
         await SaveAsync(cancellationToken);
     }
 
-    public async Task RemoveRangeAsync(TModel[] models, CancellationToken cancellationToken = default)
+    public async Task RemoveRangeAsync(IEnumerable<TModel?> models, CancellationToken cancellationToken = default)
     {
         Set.RemoveRange(models);
         await SaveAsync(cancellationToken);

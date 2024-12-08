@@ -1,7 +1,10 @@
 ﻿using Application.Interfaces;
+using Application.Interfaces.Gpt_4oMini;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Service.Services;
+using Service.Services.Gpt_4o;
+using Service.Services.Gpt_4oMini;
 
 namespace Service;
 
@@ -14,8 +17,12 @@ public static class ServiceDI
         services.AddScoped<IOtpService, OtpService>();
         services.AddScoped<IConversationService, ConversationService>();
         services.AddScoped<IMessageService, MessageService>();
-        services.AddScoped<IOpenAi_ChatModel, OpenAi_ChatModel>();
-        services.AddScoped<IOpenAI_ImageModel, OpenAI_ImageModel>();
+        services.AddScoped<IUserRequestService,UserRequestService>();
+        services.AddScoped<IOpenAi_ChatGPT3Point5Turbo, OpenAi_ChatGPT3Point5Turbo>();
+        services.AddScoped<IOpenAI_ImageModelDalle3, OpenAI_ImageModelDalle3>();
+        services.AddScoped<IOpenAI_ChatGPT4oVisionCapability, OpenAI_ChatGpt4oVisionCapability>();
+        services.AddScoped<IOpenAI_ChatGPT4oMiniVisionCapability,OpenAI_ChatGPT4oMiniVisionCapability>();
+        services.AddScoped<IWalletService, WalletService>();
 
         return services;
     }

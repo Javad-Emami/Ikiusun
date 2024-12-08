@@ -49,9 +49,9 @@ public class OtpService : BaseService<Otp, Guid>, IOtpService
                 IsUsed = false,
             };
 
-            var api = new Kavenegar.KavenegarApi(_apiKey);
+           // var api = new Kavenegar.KavenegarApi(_apiKey);
 
-            await api.Send(senderNumber, mobileNumber, newOtp.OtpCode.ToString());
+           // await api.Send(senderNumber, mobileNumber, newOtp.OtpCode.ToString());
 
             return _mapper.Map<OtpDto>(newOtp);
         }

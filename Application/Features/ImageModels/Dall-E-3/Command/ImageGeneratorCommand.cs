@@ -20,14 +20,14 @@ public class ImageGeneratorCommand : IRequest<ImageResponseDto>
 
 public class ImageGeneratorQueryHandler : IRequestHandler<ImageGeneratorCommand, ImageResponseDto>
 {
-    private readonly IOpenAI_ImageModel _openAI_ImageModel;
+    private readonly IOpenAI_ImageModelDalle3 _openAI_ImageModel;
     private readonly IConversationService _conversationService;
     private readonly IMessageService _messageService;
     private readonly IMapper _mapper;
     private readonly IUserService _userService;
     private readonly IAppDbContext _appDbContext;
     private readonly IUserRequestService _userRequestService;
-    public ImageGeneratorQueryHandler(IOpenAI_ImageModel openAI_ImageModel, IConversationService conversationService,
+    public ImageGeneratorQueryHandler(IOpenAI_ImageModelDalle3 openAI_ImageModel, IConversationService conversationService,
                                       IMessageService messageService, IMapper mapper, IUserService userService, 
                                       IAppDbContext appDbContext, IUserRequestService userRequestService)
     {
@@ -108,7 +108,7 @@ public class ImageGeneratorQueryHandler : IRequestHandler<ImageGeneratorCommand,
                 // create new convrsation
                 var mobile = "09024335424";
                 var user = await _userService.GetAsync(u => u.Mobile == mobile);
-                var newConversation = new Conversation()
+                var newConversation = new Domain.Entites.Conversation()
                 {
                     UserId = user.Id,
                     ServiceModelId = (int)ServiceModelEnum.dalle3,
@@ -131,6 +131,8 @@ public class ImageGeneratorQueryHandler : IRequestHandler<ImageGeneratorCommand,
                     throw new CustomException(500, "سایز عکس با مدل سازگار نیست");
 
                 var openAIResult = await _openAI_ImageModel.GenerateImege(request.Data);
+
+                openAIResult.ConversationId = newConversation.Id;
 
                 //TODO: Calling Cost calculation Service
 

@@ -2,6 +2,7 @@
 
 public class ImageResponseDto
 {
+    public Guid ConversationId { get; set; }
     public string ImageBase64 { get; set; }
     public Uri ImageUri { get; set; }
     public string ImagePrompt { get; set; }

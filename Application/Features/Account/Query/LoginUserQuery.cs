@@ -37,6 +37,8 @@ public class LoginUserQueryHandler : IRequestHandler<LoginUserQuery, UserDto>
 
         if (otpIssValid != null) 
         {
+            otpIssValid.IsUsed = true;
+            await _otpService.UpdateAsync(otpIssValid, cancellationToken);
             return _mapper.Map<UserDto>(user);
         }
 

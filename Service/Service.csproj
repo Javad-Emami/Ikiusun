@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="13.0.1" />
+    <PackageReference Include="Azure.AI.Vision.ImageAnalysis" Version="1.0.0" />
     <PackageReference Include="HttpClientFactory" Version="1.0.5" />
     <PackageReference Include="KavenegarDotNetCore" Version="1.0.7" />
     <PackageReference Include="MediatR" Version="12.4.1" />

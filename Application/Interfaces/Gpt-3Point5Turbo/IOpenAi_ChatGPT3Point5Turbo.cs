@@ -2,7 +2,7 @@
 
 namespace Application.Interfaces;
 
-public interface IOpenAi_ChatModel
+public interface IOpenAi_ChatGPT3Point5Turbo
 {
     Task<ChatResponseDto> GetChatCompletion(string text);
 
