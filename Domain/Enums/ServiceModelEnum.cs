@@ -6,5 +6,6 @@ public enum ServiceModelEnum
     dalle3 = 2,
     dalle2 = 3,
     gpt4o = 4,
-    gpt4omini = 5
+    gpt4omini = 5,
+    gpt01Preview = 6
 }

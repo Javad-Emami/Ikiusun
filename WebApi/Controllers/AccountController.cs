@@ -53,6 +53,13 @@ public class AccountController : ApiBaseController
         return Unauthorized();
     }
 
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        return Ok("Logged out");
+    }
+
     private string GenerateJwtToken(UserDto dto)
     {
         var claims = new[]

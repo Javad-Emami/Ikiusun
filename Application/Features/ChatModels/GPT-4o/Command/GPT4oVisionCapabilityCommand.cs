@@ -72,7 +72,7 @@ public class GPT4oVisionCapabilityCommandHandler : IRequestHandler<GPT4oVisionCa
 
                 MessagesDtoList.Add(_mapper.Map<ChatGpt4oMessagesDto>(newMessage));
 
-                var openAIResult = await _openAi_ChatGpt4oVision.GetChatCompletion(MessagesDtoList);
+                var openAIResult = await _openAi_ChatGpt4oVision.GetChatCompletionAsync(MessagesDtoList);
                 openAIResult.ConversationId = conversation.Id;
 
                 //TODO: Calling Cost calculation Service
@@ -128,8 +128,8 @@ public class GPT4oVisionCapabilityCommandHandler : IRequestHandler<GPT4oVisionCa
                 
 
                 var openAIResult = request.Data.Images != null ? 
-                    await _openAi_ChatGpt4oVision.GetChatCompletionWithVision(request.Data.Images,request.Data.Text) :
-                    await _openAi_ChatGpt4oVision.GetChatCompletion(request.Data.Text);
+                    await _openAi_ChatGpt4oVision.GetChatCompletionWithVisionAsync(request.Data.Images,request.Data.Text) :
+                    await _openAi_ChatGpt4oVision.GetChatCompletionAsync(request.Data.Text);
 
                 openAIResult.ConversationId = newConversation.Id;
 

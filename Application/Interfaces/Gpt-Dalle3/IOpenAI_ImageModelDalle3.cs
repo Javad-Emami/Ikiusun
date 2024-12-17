@@ -4,5 +4,5 @@ namespace Application.Interfaces;
 
 public interface IOpenAI_ImageModelDalle3
 {
-    Task<ImageResponseDto> GenerateImege(ImageRequestDto imageRequestDto);
+    Task<ImageResponseDto> GenerateImegeAsync(ImageRequestDto imageRequestDto);
 }

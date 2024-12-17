@@ -5,6 +5,6 @@ namespace Application.Interfaces;
 
 public interface IWalletService: IBaseService<Wallet,Guid>
 {
-    Task<bool> HasMinumumBalanceValueForChatModel(string mobile,CancellationToken cancellationToken);
-    Task<bool> HasMinumumBalanceValueForImageModel(string mobile, CancellationToken cancellationToken);
+    Task<bool> HasMinumumBalanceValueForChatModelAsync(string mobile,CancellationToken cancellationToken);
+    Task<bool> HasMinumumBalanceValueForImageModelAsync(string mobile, CancellationToken cancellationToken);
 }

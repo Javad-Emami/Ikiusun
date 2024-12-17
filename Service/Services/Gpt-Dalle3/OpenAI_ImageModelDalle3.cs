@@ -15,7 +15,7 @@ public class OpenAI_ImageModelDalle3 : IOpenAI_ImageModelDalle3
         _openAIKey = configuration.GetSection("OpenAI")["Key"];
         _userRequestService = userRequestService;
     }
-    public async Task<ImageResponseDto> GenerateImege(ImageRequestDto requestDto)
+    public async Task<ImageResponseDto> GenerateImegeAsync(ImageRequestDto requestDto)
     {
         ImageClient client = new("dall-e-3", _openAIKey);
                 

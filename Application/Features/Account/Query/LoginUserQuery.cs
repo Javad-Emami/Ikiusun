@@ -4,6 +4,8 @@ using AutoMapper;
 using Domain.Common;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OtpNet;
+using System.Text;
 
 namespace Application.Features.Account.Query;
 
@@ -30,15 +32,11 @@ public class LoginUserQueryHandler : IRequestHandler<LoginUserQuery, UserDto>
     public async Task<UserDto> Handle(LoginUserQuery request, CancellationToken cancellationToken)
     {
         var user = await _userService.GetAsync(u => u.Mobile == request.Data.Mobile);
-        var otpIssValid = await _otpService.BaseQuery.Where(o => o.UserId == user.Id &&
-                                          o.OtpCode == request.Data.OtpCode &&
-                                          o.ExpireTime > DateTime.UtcNow &&
-                                          o.IsUsed == false).FirstOrDefaultAsync(cancellationToken);
+        byte[] secretKey = Encoding.UTF32.GetBytes(user.Mobile);
+        var totp = new Totp(secretKey, mode: OtpHashMode.Sha512, step: 120, totpSize: 6);
 
-        if (otpIssValid != null) 
+        if (totp.VerifyTotp(request.Data.OtpCode, out long timeWindowUsed))
         {
-            otpIssValid.IsUsed = true;
-            await _otpService.UpdateAsync(otpIssValid, cancellationToken);
             return _mapper.Map<UserDto>(user);
         }
 

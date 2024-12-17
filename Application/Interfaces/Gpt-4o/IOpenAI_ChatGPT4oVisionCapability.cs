@@ -6,9 +6,9 @@ namespace Application.Interfaces;
 
 public interface IOpenAI_ChatGPT4oVisionCapability
 {
-    Task<Gpt4oResponseDto> GetChatCompletion(string text);
+    Task<Gpt4oResponseDto> GetChatCompletionAsync(string text);
 
-    Task<Gpt4oResponseDto> GetChatCompletion(List<ChatGpt4oMessagesDto> messages);
+    Task<Gpt4oResponseDto> GetChatCompletionAsync(List<ChatGpt4oMessagesDto> messages);
 
-    Task<Gpt4oResponseDto> GetChatCompletionWithVision(List<IFormFile> images, string prompt);
+    Task<Gpt4oResponseDto> GetChatCompletionWithVisionAsync(List<IFormFile> images, string prompt);
 }

@@ -74,7 +74,7 @@ public class ChatGpt4oMiniVisionCapibilityCommandHandler : IRequestHandler<ChatG
 
                 MessagesDtoList.Add(_mapper.Map<ChatGpt4oMiniMessagesDto>(newMessage));
 
-                var openAIResult = await _openAi_ChatGpt4oMiniVision.GetChatCompletion(MessagesDtoList);
+                var openAIResult = await _openAi_ChatGpt4oMiniVision.GetChatCompletionAsync(MessagesDtoList);
                 openAIResult.ConversationId = conversation.Id;
                 //TODO: Calling Cost calculation Service
 
@@ -129,8 +129,8 @@ public class ChatGpt4oMiniVisionCapibilityCommandHandler : IRequestHandler<ChatG
 
 
                 var openAIResult = request.Data.Images != null ?
-                    await _openAi_ChatGpt4oMiniVision.GetChatCompletionWithVision(request.Data.Images, request.Data.Text) :
-                    await _openAi_ChatGpt4oMiniVision.GetChatCompletion(request.Data.Text);
+                    await _openAi_ChatGpt4oMiniVision.GetChatCompletionWithVisionAsync(request.Data.Images, request.Data.Text) :
+                    await _openAi_ChatGpt4oMiniVision.GetChatCompletionAsync(request.Data.Text);
 
                 openAIResult.ConversationId = newConversation.Id;
 

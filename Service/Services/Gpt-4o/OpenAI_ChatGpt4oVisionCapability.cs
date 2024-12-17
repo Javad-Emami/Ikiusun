@@ -14,7 +14,7 @@ public class OpenAI_ChatGpt4oVisionCapability : IOpenAI_ChatGPT4oVisionCapabilit
     {
         _openAIKey = configuration.GetSection("OpenAI")["Key"];
     }
-    public async Task<Gpt4oResponseDto> GetChatCompletion(string text)
+    public async Task<Gpt4oResponseDto> GetChatCompletionAsync(string text)
     {
         ChatClient client = new(model: "gpt-4o", apiKey: _openAIKey);
 
@@ -29,7 +29,7 @@ public class OpenAI_ChatGpt4oVisionCapability : IOpenAI_ChatGPT4oVisionCapabilit
         return dto;
     }
 
-    public async Task<Gpt4oResponseDto> GetChatCompletion(List<ChatGpt4oMessagesDto> messages)
+    public async Task<Gpt4oResponseDto> GetChatCompletionAsync(List<ChatGpt4oMessagesDto> messages)
     {
         ChatClient client = new(model: "gpt-4o", apiKey: _openAIKey);
 
@@ -55,7 +55,7 @@ public class OpenAI_ChatGpt4oVisionCapability : IOpenAI_ChatGPT4oVisionCapabilit
         return dto;
     }
 
-    public async Task<Gpt4oResponseDto> GetChatCompletionWithVision(List<IFormFile> images, string prompt)
+    public async Task<Gpt4oResponseDto> GetChatCompletionWithVisionAsync(List<IFormFile> images, string prompt)
     {
         throw new NotImplementedException();
     }

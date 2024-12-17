@@ -25,8 +25,6 @@ public partial class AppDbContext : DbContext,IAppDbContext
 
     public virtual DbSet<Message> Messages { get; set; }
 
-    public virtual DbSet<Otp> Otps { get; set; }
-
     public virtual DbSet<Pricing> Pricings { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
@@ -124,20 +122,6 @@ public partial class AppDbContext : DbContext,IAppDbContext
                 .HasForeignKey(d => d.SenderType)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Message_SenderType");
-        });
-
-        modelBuilder.Entity<Otp>(entity =>
-        {
-            entity.ToTable("Otp");
-
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.CreationTime).HasColumnType("datetime");
-            entity.Property(e => e.ExpireTime).HasColumnType("datetime");
-
-            entity.HasOne(d => d.User).WithMany(p => p.Otps)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Otp_User");
         });
 
         modelBuilder.Entity<Pricing>(entity =>

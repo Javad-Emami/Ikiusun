@@ -75,7 +75,7 @@ public class ImageGeneratorQueryHandler : IRequestHandler<ImageGeneratorCommand,
 
                 //MessagesDtoList.Add(_mapper.Map<MessagesDto>(newMessage));
 
-                var openAIResult = await _openAI_ImageModel.GenerateImege(request.Data);
+                var openAIResult = await _openAI_ImageModel.GenerateImegeAsync(request.Data);
 
 
                 //TODO: Calling Cost calculation Service
@@ -130,7 +130,7 @@ public class ImageGeneratorQueryHandler : IRequestHandler<ImageGeneratorCommand,
                 if (request.Data.ImageSize == 1 || request.Data.ImageSize == 2)
                     throw new CustomException(500, "سایز عکس با مدل سازگار نیست");
 
-                var openAIResult = await _openAI_ImageModel.GenerateImege(request.Data);
+                var openAIResult = await _openAI_ImageModel.GenerateImegeAsync(request.Data);
 
                 openAIResult.ConversationId = newConversation.Id;
 

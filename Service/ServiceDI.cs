@@ -1,8 +1,10 @@
 ﻿using Application.Interfaces;
+using Application.Interfaces.Gpt_01Preview;
 using Application.Interfaces.Gpt_4oMini;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Service.Services;
+using Service.Services.Gpt_01Preview;
 using Service.Services.Gpt_4o;
 using Service.Services.Gpt_4oMini;
 
@@ -22,6 +24,7 @@ public static class ServiceDI
         services.AddScoped<IOpenAI_ImageModelDalle3, OpenAI_ImageModelDalle3>();
         services.AddScoped<IOpenAI_ChatGPT4oVisionCapability, OpenAI_ChatGpt4oVisionCapability>();
         services.AddScoped<IOpenAI_ChatGPT4oMiniVisionCapability,OpenAI_ChatGPT4oMiniVisionCapability>();
+        services.AddScoped<IOpenAi_ChatGPT01Preview, OpenAi_ChatGPT01Preview>();
         services.AddScoped<IWalletService, WalletService>();
 
         return services;

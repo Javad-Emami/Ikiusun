@@ -18,7 +18,7 @@ public class WalletService : BaseService<Wallet, Guid>, IWalletService
         _userService = userService;
     }
 
-    public async Task<bool> HasMinumumBalanceValueForChatModel(string mobile, CancellationToken cancellationToken)
+    public async Task<bool> HasMinumumBalanceValueForChatModelAsync(string mobile, CancellationToken cancellationToken)
     {
         var user = await _userService.BaseQuery
                     .Include(w => w.Wallet)
@@ -32,7 +32,7 @@ public class WalletService : BaseService<Wallet, Guid>, IWalletService
         return false;
     }
 
-    public async Task<bool> HasMinumumBalanceValueForImageModel(string mobile, CancellationToken cancellationToken)
+    public async Task<bool> HasMinumumBalanceValueForImageModelAsync(string mobile, CancellationToken cancellationToken)
     {
         var user = await _userService.BaseQuery
                     .Include(w => w.Wallet)

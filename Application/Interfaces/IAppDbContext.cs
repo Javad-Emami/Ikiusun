@@ -18,8 +18,6 @@ public interface IAppDbContext
 
     DbSet<Message> Messages { get; set; }
 
-    DbSet<Otp> Otps { get; set; }
-
     DbSet<Pricing> Pricings { get; set; }
 
     DbSet<Role> Roles { get; set; }

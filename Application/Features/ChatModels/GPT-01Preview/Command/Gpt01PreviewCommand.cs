@@ -1,5 +1,6 @@
-﻿using Application.Features.ChatModels.GPT_3._5Turbo.Dto;
+﻿using Application.Features.ChatModels.GPT_01Preview.Dto;
 using Application.Interfaces;
+using Application.Interfaces.Gpt_01Preview;
 using AutoMapper;
 using Domain.Common;
 using Domain.Entites;
@@ -7,37 +8,37 @@ using Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace Application.Features.ChatModels.GPT_3._5Turbo.Query;
+namespace Application.Features.ChatModels.GPT_01Preview.Command;
 
-public class GPTThreePointFiveTurboCommand: IRequest<ChatResponseDto>
+public class Gpt01PreviewCommand: IRequest<Gpt01PreviewResponseDto>
 {
-    public GPTThreePointFiveTurboCommand(ChatRequestDto data)
+    public Gpt01PreviewCommand(Gpt01PreviewRequestDto data, string mobile)
     {
         Data = data;
+        Mobile = mobile;
     }
-    public ChatRequestDto Data { get; }
+    public Gpt01PreviewRequestDto Data { get; }
+    public string Mobile { get; }   
 }
 
-public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointFiveTurboCommand, ChatResponseDto>
+public class Gpt01PreviewCommandHandler : IRequestHandler<Gpt01PreviewCommand, Gpt01PreviewResponseDto>
 {
-    private readonly IOpenAi_ChatGPT3Point5Turbo _openAi_ChatGpt;
+    private readonly IAppDbContext _appDbContext;
     private readonly IConversationService _conversationService;
     private readonly IMessageService _messageService;
     private readonly IMapper _mapper;
+    private readonly IOpenAi_ChatGPT01Preview _openAi_ChatGPT01Preview;
     private readonly IUserService _userService;
-    private readonly IAppDbContext _appDbContext;
-    public GPTThreePointFiveTurboQueryHandler(IOpenAi_ChatGPT3Point5Turbo openAi_ChatGpt, IConversationService conversationService,
-                                              IMessageService messageService, IMapper mapper, IUserService userService, 
-                                              IAppDbContext appDbContext)
+    public Gpt01PreviewCommandHandler(IAppDbContext appDbContext, IConversationService conversationService, IMessageService messageService, IMapper mapper, IOpenAi_ChatGPT01Preview openAi_ChatGPT01Preview, IUserService userService)
     {
-        _openAi_ChatGpt = openAi_ChatGpt;
+        _appDbContext = appDbContext;
         _conversationService = conversationService;
         _messageService = messageService;
         _mapper = mapper;
+        _openAi_ChatGPT01Preview = openAi_ChatGPT01Preview;
         _userService = userService;
-        _appDbContext = appDbContext;
     }
-    public async Task<ChatResponseDto> Handle(GPTThreePointFiveTurboCommand request, CancellationToken cancellationToken)
+    public async Task<Gpt01PreviewResponseDto> Handle(Gpt01PreviewCommand request, CancellationToken cancellationToken)
     {
         await using var transaction = await _appDbContext.datbase.BeginTransactionAsync(cancellationToken);
         try
@@ -59,22 +60,20 @@ public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointF
                 };
                 await _messageService.AddAsync(newMessage);
 
-                var MessagesDtoList = new List<ChatMessagesDto>();
+                var MessagesDtoList = new List<ChatGpt01PreviewMessagesDto>();
 
                 foreach (var item in messages)
                 {
-                    var dto = new ChatMessagesDto()
+                    var dto = new ChatGpt01PreviewMessagesDto()
                     {
                         Content = item.Content,
                         SenderTypeId = item.SenderType,
                     };
                     MessagesDtoList.Add(dto);
                 }
+                MessagesDtoList.Add(_mapper.Map<ChatGpt01PreviewMessagesDto>(newMessage));
 
-                MessagesDtoList.Add(_mapper.Map<ChatMessagesDto>(newMessage));
-
-                var openAIResult = await _openAi_ChatGpt.GetChatCompletionAsync(MessagesDtoList);
-
+                var openAIResult = await _openAi_ChatGPT01Preview.GetChatCompletionAsync(MessagesDtoList);
                 openAIResult.ConversationId = conversation.Id;
 
                 //TODO: Calling Cost calculation Service
@@ -84,7 +83,7 @@ public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointF
                     ConversationId = conversation.Id,
                     UserId = conversation.UserId,
                     RequestTime = DateTime.Now,
-                    ServiceModelId = (int)ServiceModelEnum.dalle3,
+                    ServiceModelId = (int)ServiceModelEnum.gpt01Preview,
                     InputToken = openAIResult.InputToken,
                     OutputTokent = openAIResult.OutputToken,
                     //Cost = 
@@ -104,15 +103,15 @@ public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointF
 
                 await transaction.CommitAsync();
                 return openAIResult;
-            }
+            } 
             else
             {
-                var mobile = "09024335424";
+                var mobile = request.Mobile;
                 var user = await _userService.GetAsync(u => u.Mobile == mobile);
                 var newConversation = new Domain.Entites.Conversation()
                 {
                     UserId = user.Id,
-                    ServiceModelId = (int)ServiceModelEnum.GptThreePointFiveTurbo,
+                    ServiceModelId = (int)ServiceModelEnum.gpt01Preview,
                     CreatedAt = DateTime.Now,
                 };
                 await _conversationService.AddAsync(newConversation);
@@ -128,7 +127,8 @@ public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointF
 
                 await _messageService.AddAsync(newMessage);
 
-                var openAIResult = await _openAi_ChatGpt.GetChatCompletionAsync(request.Data.Text);
+                var openAIResult = await _openAi_ChatGPT01Preview.GetChatCompletionAsync(request.Data.Text);
+
                 openAIResult.ConversationId = newConversation.Id;
 
                 //TODO: Calling Cost calculation Service
@@ -138,7 +138,7 @@ public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointF
                     ConversationId = newConversation.Id,
                     UserId = user.Id,
                     RequestTime = DateTime.Now,
-                    ServiceModelId = (int)ServiceModelEnum.dalle3,
+                    ServiceModelId = (int)ServiceModelEnum.gpt01Preview,
                     InputToken = openAIResult.InputToken,
                     OutputTokent = openAIResult.OutputToken,
                     //Cost = 
@@ -163,8 +163,7 @@ public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointF
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            throw new CustomException(500, "Gpt-3.5 Turbo occured an exception!" + "=>" + ex.Message);
+            throw new CustomException(500, "Gpt-01 Preview occured an exception!" + "=>" + ex.Message);
         }
-       
     }
 }

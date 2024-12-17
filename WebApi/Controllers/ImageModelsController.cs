@@ -20,7 +20,7 @@ public class ImageModelsController : ApiBaseController
     [Authorize]
     public async Task<ActionResult<ApiResult<ImageResponseDto>>> ImageGenerator([FromForm]ImageRequestDto dto, CancellationToken cancellationToken)
     {
-        var hasEnoughValue = await _walletService.HasMinumumBalanceValueForChatModel(LoggedinUserMobile, cancellationToken);
+        var hasEnoughValue = await _walletService.HasMinumumBalanceValueForChatModelAsync(LoggedinUserMobile, cancellationToken);
         if (hasEnoughValue)
         {
             var result = await Mediator.Send(new ImageGeneratorCommand(dto), cancellationToken);

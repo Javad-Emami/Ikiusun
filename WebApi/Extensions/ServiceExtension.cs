@@ -1,6 +1,7 @@
 ﻿using Application;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Persistance;
@@ -36,6 +37,7 @@ public static class ServiceExtension
         .AddCookie(o =>
             {
                 o.LoginPath = "/api/v1/account/login";
+                o.LogoutPath = "/api/v1/account/logout";
                 o.ExpireTimeSpan = TimeSpan.FromDays(30);
                 o.SlidingExpiration = true;
             })

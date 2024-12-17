@@ -6,9 +6,9 @@ namespace Application.Interfaces.Gpt_4oMini;
 
 public interface IOpenAI_ChatGPT4oMiniVisionCapability
 {
-    Task<Gpt4oMiniResponseDto> GetChatCompletion(string text);
+    Task<Gpt4oMiniResponseDto> GetChatCompletionAsync(string text);
 
-    Task<Gpt4oMiniResponseDto> GetChatCompletion(List<ChatGpt4oMiniMessagesDto> messages);
+    Task<Gpt4oMiniResponseDto> GetChatCompletionAsync(List<ChatGpt4oMiniMessagesDto> messages);
 
-    Task<Gpt4oMiniResponseDto> GetChatCompletionWithVision(List<IFormFile> images, string prompt);
+    Task<Gpt4oMiniResponseDto> GetChatCompletionWithVisionAsync(List<IFormFile> images, string prompt);
 }

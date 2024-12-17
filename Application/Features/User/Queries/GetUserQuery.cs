@@ -3,6 +3,8 @@ using AutoMapper;
 using Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OtpNet;
+using System.Text;
 
 namespace Application.Features.User.Queries;
 
@@ -34,7 +36,6 @@ public class GetUserQueryHandler : IRequestHandler<GetUserQuery, bool>
         if (user != null)
         {
             var otp = await _otpService.SendSms(request.MobileNumber,cancellationToken);
-            await _otpService.AddAsync(_mapper.Map<Domain.Entites.Otp>(otp));
             return true;
         }
         else
@@ -50,7 +51,6 @@ public class GetUserQueryHandler : IRequestHandler<GetUserQuery, bool>
 
             await _userService.AddAsync(newUser);
             var otp = await _otpService.SendSms(request.MobileNumber,cancellationToken);
-            await _otpService.AddAsync(_mapper.Map<Domain.Entites.Otp>(otp));
             return true;
         }        
     }

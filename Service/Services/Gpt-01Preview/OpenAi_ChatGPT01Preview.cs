@@ -1,36 +1,36 @@
-﻿using Application.Features.ChatModels.GPT_3._5Turbo.Dto;
-using Application.Interfaces;
+﻿using Application.Features.ChatModels.GPT_01Preview.Dto;
+using Application.Interfaces.Gpt_01Preview;
 using Domain.Enums;
 using Microsoft.Extensions.Configuration;
 using OpenAI.Chat;
 
-namespace Service.Services;
+namespace Service.Services.Gpt_01Preview;
 
-public class OpenAi_ChatGPT3Point5Turbo : IOpenAi_ChatGPT3Point5Turbo
+public class OpenAi_ChatGPT01Preview : IOpenAi_ChatGPT01Preview
 {
     private readonly string _openAIKey;
-    public OpenAi_ChatGPT3Point5Turbo(IConfiguration configuration)
+    public OpenAi_ChatGPT01Preview(IConfiguration configuration)
     {
         _openAIKey = configuration.GetSection("OpenAI")["Key"];
     }
-    public async Task<ChatResponseDto> GetChatCompletionAsync(string text)
+    public async Task<Gpt01PreviewResponseDto> GetChatCompletionAsync(string text)
     {
-        ChatClient client = new(model: "gpt-3.5-turbo", apiKey: _openAIKey);
+        ChatClient client = new(model: "o1-preview", apiKey: _openAIKey);
 
         var result = await client.CompleteChatAsync(text);
-        
-        var dto = new ChatResponseDto()
+
+        var dto = new Gpt01PreviewResponseDto()
         {
             Content = result.Value.Content[0].Text,
             InputToken = result.Value.Usage.InputTokenCount,
             OutputToken = result.Value.Usage.OutputTokenCount,
         };
-        return dto; 
+        return dto;
     }
 
-    public async Task<ChatResponseDto> GetChatCompletionAsync(List<ChatMessagesDto> messages)
+    public async Task<Gpt01PreviewResponseDto> GetChatCompletionAsync(List<ChatGpt01PreviewMessagesDto> messages)
     {
-        ChatClient client = new(model: "gpt-3.5-turbo", apiKey: _openAIKey);
+        ChatClient client = new(model: "o1-preview", apiKey: _openAIKey);
 
         var messagesHistory = new List<ChatMessage>();
         foreach (var message in messages)
@@ -45,7 +45,7 @@ public class OpenAi_ChatGPT3Point5Turbo : IOpenAi_ChatGPT3Point5Turbo
 
         var result = await client.CompleteChatAsync(messagesHistory);
 
-        var dto = new ChatResponseDto()
+        var dto = new Gpt01PreviewResponseDto()
         {
             Content = result.Value.Content[0].Text,
             InputToken = result.Value.Usage.InputTokenCount,

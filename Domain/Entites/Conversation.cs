@@ -10,7 +10,7 @@ public class Conversation : IBaseEntity<Guid>
 
     public int ServiceModelId { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now; 
 
     public string ConversationName { get; set; }
 

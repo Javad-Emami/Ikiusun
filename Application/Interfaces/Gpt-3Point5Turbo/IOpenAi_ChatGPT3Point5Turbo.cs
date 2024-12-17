@@ -4,7 +4,7 @@ namespace Application.Interfaces;
 
 public interface IOpenAi_ChatGPT3Point5Turbo
 {
-    Task<ChatResponseDto> GetChatCompletion(string text);
+    Task<ChatResponseDto> GetChatCompletionAsync(string text);
 
-    Task<ChatResponseDto> GetChatCompletion(List<ChatMessagesDto> messages);
+    Task<ChatResponseDto> GetChatCompletionAsync(List<ChatMessagesDto> messages);
 }

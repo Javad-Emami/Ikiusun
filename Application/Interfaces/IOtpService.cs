@@ -1,11 +1,6 @@
-﻿using Application.Features.Otp.Dto;
-using Application.Interfaces.Repository;
-using Domain.Entites;
+﻿namespace Application.Interfaces;
 
-namespace Application.Interfaces;
-
-public interface IOtpService :IBaseService<Otp, Guid>
+public interface IOtpService 
 {
-    Task<string> GenerateOtp(CancellationToken cancellationToken);
-    Task<OtpDto> SendSms(string mobileNumber, CancellationToken cancellationToken);
+    Task<bool> SendSms(string mobileNumber, CancellationToken cancellationToken);
 }
