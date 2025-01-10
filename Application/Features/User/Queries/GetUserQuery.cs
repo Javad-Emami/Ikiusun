@@ -40,11 +40,7 @@ public class GetUserQueryHandler : IRequestHandler<GetUserQuery, bool>
         }
         else
         {
-            var newUser = new Domain.Entites.User()
-            {
-                CreationDate = DateTime.Now,
-                Mobile = request.MobileNumber,
-            };
+            var newUser = new Domain.Entites.User(request.MobileNumber);
 
             var role = await _roleService.BaseQuery.Where(r => r.RoleName == RoleEnum.User.ToString()).FirstOrDefaultAsync();
             newUser.Roles.Add(role);

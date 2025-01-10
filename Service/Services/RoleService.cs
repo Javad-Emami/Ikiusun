@@ -8,7 +8,7 @@ namespace Service.Services;
 
 public class RoleService : BaseService<Role>, IRoleService
 {
-    public RoleService(AppDbContext context, IMapper mapper) : base(context, mapper)
+    public RoleService(SqlDbContext context, IMapper mapper) : base(context, mapper)
     {
     }
 }

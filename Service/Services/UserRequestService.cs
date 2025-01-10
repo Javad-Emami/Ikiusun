@@ -8,7 +8,7 @@ namespace Service.Services;
 
 public class UserRequestService : BaseService<UserRequest, Guid>, IUserRequestService
 {
-    public UserRequestService(AppDbContext db, IMapper mapper) : base(db, mapper)
+    public UserRequestService(SqlDbContext db, IMapper mapper) : base(db, mapper)
     {
     }
 }

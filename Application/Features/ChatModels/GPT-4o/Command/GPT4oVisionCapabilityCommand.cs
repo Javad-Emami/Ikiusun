@@ -11,11 +11,13 @@ namespace Application.Features.ChatModels.GPT_4o.Command;
 
 public class GPT4oVisionCapabilityCommand:IRequest<Gpt4oResponseDto>
 {
-    public GPT4oVisionCapabilityCommand(Gpt4oRequestDto data)
+    public GPT4oVisionCapabilityCommand(Gpt4oRequestDto data, string mobile)
     {
         Data = data;
+        Mobile = mobile;
     }
     public Gpt4oRequestDto Data { get; }
+    public string Mobile { get; }
 }
 
 public class GPT4oVisionCapabilityCommandHandler : IRequestHandler<GPT4oVisionCapabilityCommand, Gpt4oResponseDto>
@@ -25,9 +27,10 @@ public class GPT4oVisionCapabilityCommandHandler : IRequestHandler<GPT4oVisionCa
     private readonly IMessageService _messageService;
     private readonly IMapper _mapper;
     private readonly IUserService _userService;
-    private readonly IAppDbContext _appDbContext;
-    public GPT4oVisionCapabilityCommandHandler(IOpenAI_ChatGPT4oVisionCapability openAi_ChatGpt4oVision, IConversationService conversationService, 
-                                               IMessageService messageService, IMapper mapper, IUserService userService, IAppDbContext appDbContext)
+    private readonly ISqlDbContext _appDbContext;
+    private readonly IWalletService _walletService;
+    public GPT4oVisionCapabilityCommandHandler(IOpenAI_ChatGPT4oVisionCapability openAi_ChatGpt4oVision, IConversationService conversationService,
+                                               IMessageService messageService, IMapper mapper, IUserService userService, ISqlDbContext appDbContext, IWalletService walletService)
     {
         _openAi_ChatGpt4oVision = openAi_ChatGpt4oVision;
         _conversationService = conversationService;
@@ -35,28 +38,29 @@ public class GPT4oVisionCapabilityCommandHandler : IRequestHandler<GPT4oVisionCa
         _mapper = mapper;
         _userService = userService;
         _appDbContext = appDbContext;
+        _walletService = walletService;
     }
     public async Task<Gpt4oResponseDto> Handle(GPT4oVisionCapabilityCommand request, CancellationToken cancellationToken)
     {
+        var hasEnoughValue = await _walletService.HasMinumumBalanceValueForChatModelAsync(request.Mobile, cancellationToken);
+        if (!hasEnoughValue)
+            throw new CustomException(500, "اعتبار شما برای استفاده از این سرویس کافی نمی باشد. لطفا حساب خود را شارژ نمایید.");
+
         await using var transaction = await _appDbContext.datbase.BeginTransactionAsync(cancellationToken);
         try
         {
             if (request.Data.Id != null)
             {
-                var conversation = await _conversationService.GetAsync(c => c!.Id == request.Data.Id);
-
+                var conversation = await _conversationService.GetAsync((Guid)request.Data.Id);
+                var messagesList = new List<Message>();
                 var messages = await _messageService.BaseQuery.Where(m => m.ConversationId == conversation!.Id)
                                                               .OrderBy(s => s.SequenceNumber)
                                                               .ToListAsync(cancellationToken);
-                var newMessage = new Message()
+                var newMessage = new Message(conversation!.Id, request.Data.Text, (int)SenderTypeEnum.user)
                 {
-                    ConversationId = conversation!.Id,
-                    SenderType = (int)SenderTypeEnum.user,
-                    Content = request.Data.Text,
-                    CreationDate = DateTime.Now,
                     SequenceNumber = messages.Select(s => s.SequenceNumber).LastOrDefault() + 1,
                 };
-                await _messageService.AddAsync(newMessage);
+                messagesList.Add(newMessage);
 
                 var MessagesDtoList = new List<ChatGpt4oMessagesDto>();
 
@@ -77,55 +81,40 @@ public class GPT4oVisionCapabilityCommandHandler : IRequestHandler<GPT4oVisionCa
 
                 //TODO: Calling Cost calculation Service
 
-                var newUserRequest = new UserRequest()
-                {
-                    ConversationId = conversation.Id,
-                    UserId = conversation.UserId,
-                    RequestTime = DateTime.Now,
-                    ServiceModelId = (int)ServiceModelEnum.gpt4o,
-                    InputToken = openAIResult.InputToken,
-                    OutputTokent = openAIResult.OutputToken,
+                var newUserRequest = new UserRequest(conversation.UserId, conversation.Id, 
+                                                    (int)ServiceModelEnum.gpt4o, 
+                                                    openAIResult.InputToken, openAIResult.OutputToken)
+                {     
                     //Cost = 
                 };
 
-                //await _userRequestService.AddAsync(newUserRequest);
+                conversation.AddUserRequest(newUserRequest);
 
-                var newAssistantResult = new Message()
+                var newAssistantResult = new Message(conversation.Id, openAIResult.Content, (int)SenderTypeEnum.assistant)
                 {
-                    ConversationId = conversation.Id,
-                    SenderType = (int)SenderTypeEnum.assistant,
-                    Content = openAIResult.Content,
-                    CreationDate = DateTime.Now,
                     SequenceNumber = newMessage.SequenceNumber + 1,
                 };
-                await _messageService.AddAsync(newAssistantResult);
+                messagesList.Add(newAssistantResult);
+
+                conversation.AddNewMessage(messagesList);
+
+                await _conversationService.UpdateAsync(conversation, cancellationToken);
 
                 await transaction.CommitAsync();
                 return openAIResult;
             }
             else
             {
-                var mobile = "09024335424";
-                var user = await _userService.GetAsync(u => u.Mobile == mobile);
-                var newConversation = new Domain.Entites.Conversation()
-                {
-                    UserId = user.Id,
-                    ServiceModelId = (int)ServiceModelEnum.GptThreePointFiveTurbo,
-                    CreatedAt = DateTime.Now,
-                };
-                await _conversationService.AddAsync(newConversation);
+                var user = await _userService.GetAsync(u => u.Mobile == request.Mobile);
+                var newConversation = new Domain.Entites.Conversation(user.Id, (int)ServiceModelEnum.gpt4o);
+                var messagesList = new List<Message>();
 
-                var newMessage = new Message()
+                var newMessage = new Message(newConversation.Id, request.Data.Text, (int)SenderTypeEnum.user)
                 {
-                    ConversationId = newConversation.Id,
-                    SenderType = (int)SenderTypeEnum.user,
-                    Content = request.Data.Text,
-                    CreationDate = DateTime.Now,
                     SequenceNumber = 1
                 };
 
-                await _messageService.AddAsync(newMessage);                
-                
+                messagesList.Add(newMessage);
 
                 var openAIResult = request.Data.Images != null ? 
                     await _openAi_ChatGpt4oVision.GetChatCompletionWithVisionAsync(request.Data.Images,request.Data.Text) :
@@ -135,28 +124,24 @@ public class GPT4oVisionCapabilityCommandHandler : IRequestHandler<GPT4oVisionCa
 
                 //TODO: Calling Cost calculation Service
 
-                var newUserRequest = new UserRequest()
+                var newUserRequest = new UserRequest(user.Id, newConversation.Id, 
+                                                    (int)ServiceModelEnum.gpt4o,
+                                                    openAIResult.InputToken, openAIResult.OutputToken)
                 {
-                    ConversationId = newConversation.Id,
-                    UserId = user.Id,
-                    RequestTime = DateTime.Now,
-                    ServiceModelId = (int)ServiceModelEnum.gpt4o,
-                    InputToken = openAIResult.InputToken,
-                    OutputTokent = openAIResult.OutputToken,
                     //Cost = 
                 };
 
-                //await _userRequestService.AddAsync(newUserRequest);
+                newConversation.AddUserRequest(newUserRequest);
 
-                var newAssistantResult = new Message()
+                var newAssistantResult = new Message(newConversation.Id, openAIResult.Content, (int)SenderTypeEnum.assistant)
                 {
-                    ConversationId = newConversation.Id,
-                    SenderType = (int)SenderTypeEnum.assistant,
-                    Content = openAIResult.Content,
-                    CreationDate = DateTime.Now,
                     SequenceNumber = newMessage.SequenceNumber + 1,
                 };
-                await _messageService.AddAsync(newAssistantResult);
+                messagesList.Add(newAssistantResult);
+
+                newConversation.AddNewMessage(messagesList);
+
+                await _conversationService.AddAsync(newConversation, cancellationToken);
 
                 await transaction.CommitAsync();
                 return openAIResult;

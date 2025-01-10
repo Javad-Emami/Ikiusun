@@ -9,12 +9,12 @@ namespace Persistance
     {
         public static IServiceCollection AddPersistance(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddDbContext<AppDbContext>(options =>
+            services.AddDbContext<SqlDbContext>(options =>
             {
-                options.UseSqlServer(configuration.GetConnectionString("AppDb"));
+                options.UseSqlServer(configuration.GetConnectionString("SqlDbConnectionString"));
             });
 
-            services.AddScoped<IAppDbContext>(provider => provider.GetService<AppDbContext>());
+            services.AddScoped<ISqlDbContext>(provider => provider.GetService<SqlDbContext>());
 
             return services;
         }

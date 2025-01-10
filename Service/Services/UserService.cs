@@ -10,7 +10,7 @@ namespace Service.Services;
 
 public class UserService : BaseService<User, Guid>, IUserService
 {
-    public UserService(AppDbContext db, IMapper mapper) : base(db, mapper)
+    public UserService(SqlDbContext db, IMapper mapper) : base(db, mapper)
     {
     }
 }

@@ -8,11 +8,11 @@ using Service.Repository;
 
 namespace Service.Services;
 
-public class WalletService : BaseService<Wallet, Guid>, IWalletService
+public class WalletService : BaseService<WalletTransaction, Guid>, IWalletService
 {
-    private readonly IAppDbContext _appDbContext;
+    private readonly ISqlDbContext _appDbContext;
     private readonly IUserService _userService;
-    public WalletService(AppDbContext db, IMapper mapper, IUserService userService) : base(db, mapper)
+    public WalletService(SqlDbContext db, IMapper mapper, IUserService userService) : base(db, mapper)
     {
         _appDbContext = db;
         _userService = userService;
@@ -21,13 +21,14 @@ public class WalletService : BaseService<Wallet, Guid>, IWalletService
     public async Task<bool> HasMinumumBalanceValueForChatModelAsync(string mobile, CancellationToken cancellationToken)
     {
         var user = await _userService.BaseQuery
-                    .Include(w => w.Wallet)
-                    .Where(u => u.Mobile == mobile)
+                    .Include(w => w.WalletTransactions)
+                    .Where(u => u.Mobile == mobile)                    
                     .FirstOrDefaultAsync(cancellationToken);
-        if (user.Wallet == null)
-            throw new CustomException(500, "اعتبار شما برای استفاده از این سرویس کافی نمی باشد. لطفا حساب خود را شارژ نمایید.");
+        if (user.WalletTransactions != null)
+            if(user.WalletTransactions.OrderByDescending(tt => tt.TransactionTime).Select(b => b.BalanceAmount).FirstOrDefault() <= 5000)
+                throw new CustomException(500, "اعتبار شما برای استفاده از این سرویس کافی نمی باشد. لطفا حساب خود را شارژ نمایید.");
 
-        if(user!.Wallet!.BalanceAmount > (decimal)500)
+        if(user.WalletTransactions.Select(b => b.BalanceAmount).FirstOrDefault() > 500)
             return true;
         return false;
     }
@@ -35,13 +36,14 @@ public class WalletService : BaseService<Wallet, Guid>, IWalletService
     public async Task<bool> HasMinumumBalanceValueForImageModelAsync(string mobile, CancellationToken cancellationToken)
     {
         var user = await _userService.BaseQuery
-                    .Include(w => w.Wallet)
+                    .Include(w => w.WalletTransactions)
                     .Where(u => u.Mobile == mobile)
                     .FirstOrDefaultAsync(cancellationToken);
-        if (user.Wallet == null)
-            throw new CustomException(500, "اعتبار شما برای استفاده از این سرویس کافی نمی باشد. لطفا حساب خود را شارژ نمایید.");
+        if (user.WalletTransactions != null)
+            if (user.WalletTransactions.OrderByDescending(tt => tt.TransactionTime).Select(b => b.BalanceAmount).FirstOrDefault() <= 10000)
+                throw new CustomException(500, "اعتبار شما برای استفاده از این سرویس کافی نمی باشد. لطفا حساب خود را شارژ نمایید.");
 
-        if (user!.Wallet!.BalanceAmount > (decimal)10000)
+        if (user.WalletTransactions.Select(b => b.BalanceAmount).FirstOrDefault() > 10000)
             return true;
         return false;
     }

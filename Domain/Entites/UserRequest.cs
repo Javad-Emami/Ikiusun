@@ -4,6 +4,15 @@ namespace Domain.Entites;
 
 public class UserRequest : IBaseEntity<Guid>
 {
+    public UserRequest(Guid userId, Guid conversationId,int serviceModelId,int? inputToken, int? outputTokent)
+    {
+        UserId = userId;
+        ConversationId = conversationId;
+        ServiceModelId = serviceModelId;
+        InputToken = inputToken;
+        OutputTokent = outputTokent;
+    }
+
     public Guid Id { get; set; }
 
     public Guid ConversationId { get; set; }
@@ -12,11 +21,11 @@ public class UserRequest : IBaseEntity<Guid>
 
     public Guid UserId { get; set; }
 
-    public DateTime RequestTime { get; set; }
+    public DateTime RequestTime { get; set; } = DateTime.Now;
 
-    public int InputToken { get; set; }
+    public int? InputToken { get; set; }
 
-    public int OutputTokent { get; set; }
+    public int? OutputTokent { get; set; }
 
     public decimal Cost { get; set; }
 

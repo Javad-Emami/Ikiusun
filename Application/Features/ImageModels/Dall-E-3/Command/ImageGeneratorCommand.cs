@@ -11,11 +11,13 @@ namespace Application.Features.ImageModels.Dall_E_3.Query;
 
 public class ImageGeneratorCommand : IRequest<ImageResponseDto>
 {
-    public ImageGeneratorCommand(ImageRequestDto data)
+    public ImageGeneratorCommand(ImageRequestDto data, string mobile)
     {
         Data = data;
+        Mobile = mobile;
     }
     public ImageRequestDto Data { get; }
+    public string Mobile { get; }
 }
 
 public class ImageGeneratorQueryHandler : IRequestHandler<ImageGeneratorCommand, ImageResponseDto>
@@ -25,11 +27,12 @@ public class ImageGeneratorQueryHandler : IRequestHandler<ImageGeneratorCommand,
     private readonly IMessageService _messageService;
     private readonly IMapper _mapper;
     private readonly IUserService _userService;
-    private readonly IAppDbContext _appDbContext;
+    private readonly ISqlDbContext _appDbContext;
     private readonly IUserRequestService _userRequestService;
+    private readonly IWalletService _walletService;
     public ImageGeneratorQueryHandler(IOpenAI_ImageModelDalle3 openAI_ImageModel, IConversationService conversationService,
-                                      IMessageService messageService, IMapper mapper, IUserService userService, 
-                                      IAppDbContext appDbContext, IUserRequestService userRequestService)
+                                      IMessageService messageService, IMapper mapper, IUserService userService,
+                                      ISqlDbContext appDbContext, IUserRequestService userRequestService, IWalletService walletService)
     {
         _openAI_ImageModel = openAI_ImageModel;
         _conversationService = conversationService;
@@ -38,96 +41,70 @@ public class ImageGeneratorQueryHandler : IRequestHandler<ImageGeneratorCommand,
         _userService = userService;
         _appDbContext = appDbContext;
         _userRequestService = userRequestService;
+        _walletService = walletService;
     }
     public async Task<ImageResponseDto> Handle(ImageGeneratorCommand request, CancellationToken cancellationToken)
     {
+        var hasEnoughValue = await _walletService.HasMinumumBalanceValueForImageModelAsync(request.Mobile, cancellationToken);
+        if (!hasEnoughValue)
+            throw new CustomException(500, "اعتبار شما برای استفاده از این سرویس کافی نمی باشد. لطفا حساب خود را شارژ نمایید.");
+
         await using var transaction = await _appDbContext.datbase.BeginTransactionAsync(cancellationToken);
         try
         {
             if (request.Data.Id != null)
             {
-                var conversation = await _conversationService.GetAsync(c => c.Id == request.Data.Id);
-
+                var conversation = await _conversationService.GetAsync((Guid)request.Data.Id);
+                var messagesList = new List<Message>();
                 var messages = await _messageService.BaseQuery.Where(m => m.ConversationId == conversation.Id)
                                                               .OrderBy(s => s.SequenceNumber)
                                                               .ToListAsync(cancellationToken);
-                var newMessage = new Message()
-                {
-                    ConversationId = conversation.Id,
-                    SenderType = (int)SenderTypeEnum.user,
-                    Content = request.Data.ImagePrompt,
-                    CreationDate = DateTime.Now,
+                var newMessage = new Message(conversation.Id, request.Data.ImagePrompt, (int)SenderTypeEnum.user)
+                {                   
                     SequenceNumber = messages.Select(s => s.SequenceNumber).LastOrDefault() + 1,
                 };
-                await _messageService.AddAsync(newMessage);
 
-                //var MessagesDtoList = new List<MessagesDto>();
-
-                //foreach (var item in messages)
-                //{
-                //    var dto = new MessagesDto()
-                //    {
-                //        Content = item.Content,
-                //        SenderTypeId = item.SenderType,
-                //    };
-                //    MessagesDtoList.Add(dto);
-                //}
-
-                //MessagesDtoList.Add(_mapper.Map<MessagesDto>(newMessage));
+                messagesList.Add(newMessage);
+                //await _messageService.AddAsync(newMessage);
 
                 var openAIResult = await _openAI_ImageModel.GenerateImegeAsync(request.Data);
 
 
                 //TODO: Calling Cost calculation Service
 
-                var newUserRequest = new UserRequest()
-                {
-                    ConversationId = conversation.Id,
-                    UserId = conversation.UserId,
-                    RequestTime = DateTime.Now,
-                    ServiceModelId = (int)ServiceModelEnum.dalle3,
+                var newUserRequest = new UserRequest(conversation.UserId, conversation.Id, (int)ServiceModelEnum.dalle3,null,null)
+                {                    
                     //Cost = 
                 };
 
-                //await _userRequestService.AddAsync(newUserRequest);
-                var newAssistantResult = new Message()
+                conversation.AddUserRequest(newUserRequest);
+
+                var newAssistantResult = new Message(conversation.Id, openAIResult.ImageBase64, (int)SenderTypeEnum.assistant)
                 {
-                    ConversationId = conversation.Id,
-                    SenderType = (int)SenderTypeEnum.assistant,
-                    //Content = openAIResult.ImageBase64,
-                    CreationDate = DateTime.Now,
-                    SequenceNumber = newMessage.SequenceNumber + 1,
+                    SequenceNumber = newMessage.SequenceNumber + 1
                 };
-                await _messageService.AddAsync(newAssistantResult);
+                messagesList.Add(newAssistantResult);
+
+                conversation.AddNewMessage(messagesList);
+
+                await _conversationService.UpdateAsync(conversation, cancellationToken);
 
                 await transaction.CommitAsync();
                 return openAIResult;
             }
             else
             {
-                // create new convrsation
-                var mobile = "09024335424";
-                var user = await _userService.GetAsync(u => u.Mobile == mobile);
-                var newConversation = new Domain.Entites.Conversation()
-                {
-                    UserId = user.Id,
-                    ServiceModelId = (int)ServiceModelEnum.dalle3,
-                    CreatedAt = DateTime.Now,
-                };
-                await _conversationService.AddAsync(newConversation);
+                var user = await _userService.GetAsync(u => u.Mobile == request.Mobile);
+                var newConversation = new Domain.Entites.Conversation(user.Id, (int)ServiceModelEnum.dalle3);
+                var messagesList = new List<Message>();
 
-                var newMessage = new Message()
+                var newMessage = new Message(newConversation.Id, request.Data.ImagePrompt, (int)SenderTypeEnum.user)
                 {
-                    ConversationId = newConversation.Id,
-                    SenderType = (int)SenderTypeEnum.user,
-                    Content = request.Data.ImagePrompt,
-                    CreationDate = DateTime.Now,
                     SequenceNumber = 1
                 };
+                messagesList.Add(newMessage);
 
-                await _messageService.AddAsync(newMessage);
-
-                if (request.Data.ImageSize == 1 || request.Data.ImageSize == 2)
+                if (request.Data.ImageSize == (int)ImageSizeEnum.W256xH256 || request.Data.ImageSize == (int)ImageSizeEnum.W512xH512)
                     throw new CustomException(500, "سایز عکس با مدل سازگار نیست");
 
                 var openAIResult = await _openAI_ImageModel.GenerateImegeAsync(request.Data);
@@ -136,26 +113,22 @@ public class ImageGeneratorQueryHandler : IRequestHandler<ImageGeneratorCommand,
 
                 //TODO: Calling Cost calculation Service
 
-                var newUserRequest = new UserRequest()
+                var newUserRequest = new UserRequest(user.Id, newConversation.Id, (int)ServiceModelEnum.dalle3,null,null)
                 {
-                    ConversationId = newConversation.Id,
-                    UserId = user.Id,
-                    RequestTime = DateTime.Now,
-                    ServiceModelId= (int)ServiceModelEnum.dalle3,
                     //Cost = 
                 };
 
-                //await _userRequestService.AddAsync(newUserRequest);
+                newConversation.AddUserRequest(newUserRequest);
 
-                var newAssistantResult = new Message()
+                var newAssistantResult = new Message(newConversation.Id, openAIResult.ImageBase64, (int)SenderTypeEnum.assistant)
                 {
-                    ConversationId = newConversation.Id,
-                    SenderType = (int)SenderTypeEnum.assistant,
-                    Content = openAIResult.ImageUri.ToString(),
-                    CreationDate = DateTime.Now,
                     SequenceNumber = newMessage.SequenceNumber + 1,
                 };
-                await _messageService.AddAsync(newAssistantResult);
+                messagesList.Add(newAssistantResult);
+
+                newConversation.AddNewMessage(messagesList);
+
+                await _conversationService.AddAsync(newConversation, cancellationToken);
 
                 await transaction.CommitAsync();
                 return openAIResult;

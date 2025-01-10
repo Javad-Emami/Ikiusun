@@ -4,17 +4,17 @@ using Persistance;
 
 namespace Service.Repository;
 
-public class BaseService<T, TKey> : EFBaseRepository<AppDbContext, T, TKey>
+public class BaseService<T, TKey> : EFBaseRepository<SqlDbContext, T, TKey>
     where TKey : IEquatable<TKey> where T : class, IBaseEntity<TKey>
 {
-    public BaseService(AppDbContext db, IMapper mapper) : base(db, mapper)
+    public BaseService(SqlDbContext db, IMapper mapper) : base(db, mapper)
     {
     }
 }
 
 public abstract class BaseService<TEntity>: BaseService<TEntity,int> where TEntity : class, IBaseEntity<int>
 {
-    protected BaseService(AppDbContext context, IMapper mapper): base(context, mapper) 
+    protected BaseService(SqlDbContext context, IMapper mapper): base(context, mapper) 
     {
     }
 }

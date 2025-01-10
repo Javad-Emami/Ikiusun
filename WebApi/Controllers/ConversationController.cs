@@ -6,7 +6,7 @@ using Application.Features.ConversationService.Dto;
 
 namespace WebApi.Controllers
 {
-    public class ConversationController : ApiBaseController
+    public class conversationController : ApiBaseController
     {
         [HttpDelete("delete/{conversationId:guid}")]
         public async Task<ActionResult<ApiResult<bool>>> DeleteConversation(Guid conversationId,CancellationToken cancellationToken)

@@ -8,7 +8,7 @@ namespace Service.Services;
 
 public class ConversationService : BaseService<Conversation, Guid>, IConversationService
 {
-    public ConversationService(AppDbContext db, IMapper mapper) : base(db, mapper)
+    public ConversationService(SqlDbContext db, IMapper mapper) : base(db, mapper)
     {
     }
 }

@@ -18,8 +18,8 @@ public class DeleteConversationCommandHandler : IRequestHandler<DeleteConversati
 {
     private readonly IConversationService _conversationService;
     private readonly IMessageService _messageService;
-    private readonly IAppDbContext _appDbContext;
-    public DeleteConversationCommandHandler(IConversationService conversationService, IMessageService messageService, IAppDbContext appDbContext)
+    private readonly ISqlDbContext _appDbContext;
+    public DeleteConversationCommandHandler(IConversationService conversationService, IMessageService messageService, ISqlDbContext appDbContext)
     {
         _conversationService = conversationService;
         _messageService = messageService;

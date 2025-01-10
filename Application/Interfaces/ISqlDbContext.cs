@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace Application.Interfaces;
 
-public interface IAppDbContext
+public interface ISqlDbContext
 {
     DatabaseFacade datbase { get; }
 
@@ -13,8 +13,6 @@ public interface IAppDbContext
     DbSet<Conversation> Conversations { get; set; }
 
     DbSet<CurrencyExchangeRate> CurrencyExchangeRates { get; set; }
-
-    DbSet<Deposite> Deposites { get; set; }
 
     DbSet<Message> Messages { get; set; }
 
@@ -30,7 +28,5 @@ public interface IAppDbContext
 
     DbSet<UserRequest> UserRequests { get; set; }
 
-    DbSet<Wallet> Wallets { get; set; }
-
-    DbSet<Withdrawal> Withdrawals { get; set; }
+    DbSet<WalletTransaction> Wallets { get; set; }
 }

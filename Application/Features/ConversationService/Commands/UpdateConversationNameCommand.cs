@@ -25,7 +25,7 @@ public class UpdateConversationNameCommandHandler : IRequestHandler<UpdateConver
     {
         var conversation = await _conversationService.BaseQuery.Where(a => a.Id == request.Data.Id).FirstOrDefaultAsync();
         if(conversation != null)
-            conversation.ConversationName = request.Data.ConversationName;
+            conversation.EditConversationName(request.Data.ConversationName);
 
         await _conversationService.UpdateAsync(conversation);
         return true;

@@ -3,7 +3,10 @@ using Application.Interfaces;
 using Domain.Enums;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using OpenAI;
+using OpenAI.Assistants;
 using OpenAI.Chat;
+using OpenAI.Files;
 
 namespace Service.Services.Gpt_4o;
 
@@ -16,8 +19,10 @@ public class OpenAI_ChatGpt4oVisionCapability : IOpenAI_ChatGPT4oVisionCapabilit
     }
     public async Task<Gpt4oResponseDto> GetChatCompletionAsync(string text)
     {
-        ChatClient client = new(model: "gpt-4o", apiKey: _openAIKey);
+        OpenAIClient openAIClient = new(Environment.GetEnvironmentVariable("OPENAI_API_KEY"));
+        OpenAIFileClient fileClient = openAIClient.GetOpenAIFileClient();
 
+        ChatClient client = new(model: "gpt-4o", apiKey: _openAIKey);
         var result = await client.CompleteChatAsync(text);
 
         var dto = new Gpt4oResponseDto()
