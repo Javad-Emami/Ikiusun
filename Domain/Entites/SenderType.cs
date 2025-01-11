@@ -2,7 +2,7 @@
 
 namespace Domain.Entites;
 
-public class SenderType : IBaseEntity
+public class SenderType 
 {
     public int Id { get; set; }
 

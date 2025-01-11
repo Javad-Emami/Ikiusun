@@ -26,6 +26,9 @@ public static class ServiceDI
         services.AddScoped<IOpenAI_ChatGPT4oMiniVisionCapability,OpenAI_ChatGPT4oMiniVisionCapability>();
         services.AddScoped<IOpenAi_ChatGPT01Preview, OpenAi_ChatGPT01Preview>();
         services.AddScoped<IWalletService, WalletService>();
+        services.AddScoped<IPricingService, PricingService>();
+        services.AddScoped<ICostCalculationService, CostCalculationService>();
+        services.AddScoped<ICurrencyExchangeRateService, CurrencyExchangeRateService>();
 
         return services;
     }

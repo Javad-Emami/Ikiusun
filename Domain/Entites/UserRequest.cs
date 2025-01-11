@@ -4,20 +4,24 @@ namespace Domain.Entites;
 
 public class UserRequest : IBaseEntity<Guid>
 {
-    public UserRequest(Guid userId, Guid conversationId,int serviceModelId,int? inputToken, int? outputTokent)
+    public UserRequest()
     {
+            
+    }
+    public UserRequest(Guid userId, Guid conversationId,int? inputToken, int? outputTokent, decimal cost, Guid pricingId)
+    {
+        Id = Guid.NewGuid();
         UserId = userId;
         ConversationId = conversationId;
-        ServiceModelId = serviceModelId;
         InputToken = inputToken;
         OutputTokent = outputTokent;
+        Cost = cost;
+        PricingId = pricingId;
     }
 
     public Guid Id { get; set; }
 
     public Guid ConversationId { get; set; }
-
-    public int ServiceModelId { get; set; }
 
     public Guid UserId { get; set; }
 
@@ -29,9 +33,11 @@ public class UserRequest : IBaseEntity<Guid>
 
     public decimal Cost { get; set; }
 
+    public Guid PricingId { get; set; }
+
     public virtual Conversation Conversation { get; set; } = null!;
 
-    public virtual ServiceModel ServiceModel { get; set; } = null!;
+    public virtual Pricing Pricing { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;
 }

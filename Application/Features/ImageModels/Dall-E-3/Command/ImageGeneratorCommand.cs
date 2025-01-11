@@ -6,6 +6,7 @@ using Domain.Entites;
 using Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 
 namespace Application.Features.ImageModels.Dall_E_3.Query;
 
@@ -30,9 +31,10 @@ public class ImageGeneratorQueryHandler : IRequestHandler<ImageGeneratorCommand,
     private readonly ISqlDbContext _appDbContext;
     private readonly IUserRequestService _userRequestService;
     private readonly IWalletService _walletService;
+    private readonly ICostCalculationService _costCalculationService;
     public ImageGeneratorQueryHandler(IOpenAI_ImageModelDalle3 openAI_ImageModel, IConversationService conversationService,
                                       IMessageService messageService, IMapper mapper, IUserService userService,
-                                      ISqlDbContext appDbContext, IUserRequestService userRequestService, IWalletService walletService)
+                                      ISqlDbContext appDbContext, IUserRequestService userRequestService, IWalletService walletService, ICostCalculationService costCalculationService)
     {
         _openAI_ImageModel = openAI_ImageModel;
         _conversationService = conversationService;
@@ -42,6 +44,7 @@ public class ImageGeneratorQueryHandler : IRequestHandler<ImageGeneratorCommand,
         _appDbContext = appDbContext;
         _userRequestService = userRequestService;
         _walletService = walletService;
+        _costCalculationService = costCalculationService;
     }
     public async Task<ImageResponseDto> Handle(ImageGeneratorCommand request, CancellationToken cancellationToken)
     {
@@ -70,12 +73,23 @@ public class ImageGeneratorQueryHandler : IRequestHandler<ImageGeneratorCommand,
                 var openAIResult = await _openAI_ImageModel.GenerateImegeAsync(request.Data);
 
 
-                //TODO: Calling Cost calculation Service
+                var costDto = await _costCalculationService.ImageModelCostCalculationAsync(ServiceModelEnum.dalle3,
+                                                                                                   (int)openAIResult.ImageResolution,
+                                                                                                   (int)openAIResult.ImageQuality,
+                                                                                                   cancellationToken);
+                var userWallet = await _walletService.BaseQuery
+                                            .Where(w => w.UserId == conversation.UserId && w.TransactionTime >= DateTime.Now.AddDays(-10))
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken) ??
+                                 await _walletService.BaseQuery
+                                            .Where(w => w.UserId == conversation.UserId)
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken);
 
-                var newUserRequest = new UserRequest(conversation.UserId, conversation.Id, (int)ServiceModelEnum.dalle3,null,null)
-                {                    
-                    //Cost = 
-                };
+                var updatedUserWallet = new WalletTransaction(conversation.UserId, (int)TransactionType.Withdrawl, costDto.CostUsage, userWallet.BalanceAmount);
+                await _walletService.AddAsync(updatedUserWallet, cancellationToken);
+
+                var newUserRequest = new UserRequest(conversation.UserId, conversation.Id,null,null, costDto.CostUsage,costDto.PricingId);
 
                 conversation.AddUserRequest(newUserRequest);
 
@@ -104,19 +118,29 @@ public class ImageGeneratorQueryHandler : IRequestHandler<ImageGeneratorCommand,
                 };
                 messagesList.Add(newMessage);
 
-                if (request.Data.ImageSize == (int)ImageSizeEnum.W256xH256 || request.Data.ImageSize == (int)ImageSizeEnum.W512xH512)
+                if (request.Data.ImageSize == (int)ImageResolutionEnum.W256xH256 || request.Data.ImageSize == (int)ImageResolutionEnum.W512xH512)
                     throw new CustomException(500, "سایز عکس با مدل سازگار نیست");
 
                 var openAIResult = await _openAI_ImageModel.GenerateImegeAsync(request.Data);
 
                 openAIResult.ConversationId = newConversation.Id;
 
-                //TODO: Calling Cost calculation Service
+                var costDto = await _costCalculationService.ImageModelCostCalculationAsync(ServiceModelEnum.dalle3,
+                                                                                        (int)openAIResult.ImageResolution,
+                                                                                        (int)openAIResult.ImageQuality,
+                                                                                         cancellationToken);
+                var userWallet = await _walletService.BaseQuery
+                                            .Where(w => w.UserId == user.Id && w.TransactionTime >= DateTime.Now.AddDays(-10))
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken) ??
+                                 await _walletService.BaseQuery
+                                            .Where(w => w.UserId == user.Id)
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken);
 
-                var newUserRequest = new UserRequest(user.Id, newConversation.Id, (int)ServiceModelEnum.dalle3,null,null)
-                {
-                    //Cost = 
-                };
+                var updatedUserWallet = new WalletTransaction(user.Id, (int)TransactionType.Withdrawl, costDto.CostUsage, userWallet.BalanceAmount);
+                await _walletService.AddAsync(updatedUserWallet, cancellationToken);
+                var newUserRequest = new UserRequest(user.Id, newConversation.Id, null, null, costDto.CostUsage, costDto.PricingId);                
 
                 newConversation.AddUserRequest(newUserRequest);
 

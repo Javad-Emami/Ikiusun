@@ -30,7 +30,8 @@ public class Gpt01PreviewCommandHandler : IRequestHandler<Gpt01PreviewCommand, G
     private readonly IOpenAi_ChatGPT01Preview _openAi_ChatGPT01Preview;
     private readonly IUserService _userService;
     private readonly IWalletService _walletService;
-    public Gpt01PreviewCommandHandler(ISqlDbContext appDbContext, IConversationService conversationService, IMessageService messageService, IMapper mapper, IOpenAi_ChatGPT01Preview openAi_ChatGPT01Preview, IUserService userService, IWalletService walletService)
+    private readonly ICostCalculationService _costCalculationService;
+    public Gpt01PreviewCommandHandler(ISqlDbContext appDbContext, IConversationService conversationService, IMessageService messageService, IMapper mapper, IOpenAi_ChatGPT01Preview openAi_ChatGPT01Preview, IUserService userService, IWalletService walletService, ICostCalculationService costCalculationService)
     {
         _appDbContext = appDbContext;
         _conversationService = conversationService;
@@ -39,6 +40,7 @@ public class Gpt01PreviewCommandHandler : IRequestHandler<Gpt01PreviewCommand, G
         _openAi_ChatGPT01Preview = openAi_ChatGPT01Preview;
         _userService = userService;
         _walletService = walletService;
+        _costCalculationService = costCalculationService;
     }
     public async Task<Gpt01PreviewResponseDto> Handle(Gpt01PreviewCommand request, CancellationToken cancellationToken)
     {
@@ -79,14 +81,24 @@ public class Gpt01PreviewCommandHandler : IRequestHandler<Gpt01PreviewCommand, G
                 var openAIResult = await _openAi_ChatGPT01Preview.GetChatCompletionAsync(MessagesDtoList);
                 openAIResult.ConversationId = conversation.Id;
 
-                //TODO: Calling Cost calculation Service
+                var costDto = await _costCalculationService.ChatModelCostCalculationAsync(ServiceModelEnum.gpt01Preview,
+                                                                                                   openAIResult.InputToken,
+                                                                                                   openAIResult.OutputToken,
+                                                                                                   cancellationToken);
+                var userWallet = await _walletService.BaseQuery
+                                            .Where(w => w.UserId == conversation.UserId && w.TransactionTime >= DateTime.Now.AddDays(-10))
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken) ??
+                                 await _walletService.BaseQuery
+                                            .Where(w => w.UserId == conversation.UserId)
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken);
 
-                var newUserRequest = new UserRequest(conversation.UserId, conversation.Id, 
-                                                    (int)ServiceModelEnum.gpt01Preview,
-                                                    openAIResult.InputToken, openAIResult.OutputToken)
-                {
-                    //Cost = 
-                };
+                var updatedUserWallet = new WalletTransaction(conversation.UserId, (int)TransactionType.Withdrawl, costDto.CostUsage, userWallet.BalanceAmount);
+                await _walletService.AddAsync(updatedUserWallet, cancellationToken);
+                var newUserRequest = new UserRequest(conversation.UserId, conversation.Id,                                                    
+                                                    openAIResult.InputToken, openAIResult.OutputToken,costDto.CostUsage, costDto.PricingId);
+                
                 conversation.AddUserRequest(newUserRequest);
 
                 var newAssistantResult = new Message(conversation.Id, openAIResult.Content, (int)SenderTypeEnum.assistant)
@@ -118,14 +130,23 @@ public class Gpt01PreviewCommandHandler : IRequestHandler<Gpt01PreviewCommand, G
 
                 openAIResult.ConversationId = newConversation.Id;
 
-                //TODO: Calling Cost calculation Service
+                var costDto = await _costCalculationService.ChatModelCostCalculationAsync(ServiceModelEnum.gpt01Preview,
+                                                                                                  openAIResult.InputToken,
+                                                                                                  openAIResult.OutputToken,
+                                                                                                  cancellationToken);
+                var userWallet = await _walletService.BaseQuery
+                                            .Where(w => w.UserId == user.Id && w.TransactionTime >= DateTime.Now.AddDays(-10))
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken) ??
+                                await _walletService.BaseQuery
+                                            .Where(w => w.UserId == user.Id)
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken);
 
-                var newUserRequest = new UserRequest(user.Id, newConversation.Id, 
-                                                    (int)ServiceModelEnum.gpt01Preview, 
-                                                    openAIResult.InputToken, openAIResult.OutputToken)
-                {                    
-                    //Cost = 
-                };
+                var updatedUserWallet = new WalletTransaction(user.Id, (int)TransactionType.Withdrawl, costDto.CostUsage, userWallet.BalanceAmount);
+                await _walletService.AddAsync(updatedUserWallet, cancellationToken);
+                var newUserRequest = new UserRequest(user.Id, newConversation.Id,
+                                                    openAIResult.InputToken, openAIResult.OutputToken,costDto.CostUsage,costDto.PricingId);
 
                 newConversation.AddUserRequest(newUserRequest);
 

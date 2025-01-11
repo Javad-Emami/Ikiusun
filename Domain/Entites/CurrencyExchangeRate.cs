@@ -1,6 +1,8 @@
-﻿namespace Domain.Entites;
+﻿using Domain.Common;
 
-public class CurrencyExchangeRate
+namespace Domain.Entites;
+
+public class CurrencyExchangeRate : IBaseEntity
 {
     public int Id { get; set; }
 

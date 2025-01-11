@@ -14,12 +14,15 @@ public partial class SqlDbContext : DbContext,ISqlDbContext
     public SqlDbContext(DbContextOptions<SqlDbContext> options): base(options)
     {
     }
-
     public virtual DbSet<Attachment> Attachments { get; set; }
 
     public virtual DbSet<Conversation> Conversations { get; set; }
 
     public virtual DbSet<CurrencyExchangeRate> CurrencyExchangeRates { get; set; }
+
+    //public virtual DbSet<ImageQuality> ImageQualities { get; set; }
+
+    //public virtual DbSet<ImageResolution> ImageResolutions { get; set; }
 
     public virtual DbSet<Message> Messages { get; set; }
 
@@ -27,19 +30,18 @@ public partial class SqlDbContext : DbContext,ISqlDbContext
 
     public virtual DbSet<Role> Roles { get; set; }
 
-    public virtual DbSet<SenderType> SenderTypes { get; set; }
+    //public virtual DbSet<SenderType> SenderTypes { get; set; }
 
-    public virtual DbSet<ServiceModel> ServiceModels { get; set; }
+    //public virtual DbSet<ServiceModel> ServiceModels { get; set; }
+
+    //public virtual DbSet<TransactionType> TransactionTypes { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserRequest> UserRequests { get; set; }
 
-    public virtual DbSet<WalletTransaction> Wallets { get; set; }
-
     public virtual DbSet<WalletTransaction> WalletTransactions { get; set; }
     public DatabaseFacade datbase => Database;
-
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
 
@@ -71,10 +73,10 @@ public partial class SqlDbContext : DbContext,ISqlDbContext
             entity.Property(e => e.ConversationName).HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
 
-            entity.HasOne(d => d.ServiceModel).WithMany(p => p.Conversations)
-                .HasForeignKey(d => d.ServiceModelId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Conversation_ServiceModel");
+            //entity.HasOne(d => d.ServiceModel).WithMany(p => p.Conversations)
+            //    .HasForeignKey(d => d.ServiceModelId)
+            //    .OnDelete(DeleteBehavior.ClientSetNull)
+            //    .HasConstraintName("FK_Conversation_ServiceModel");
 
             entity.HasOne(d => d.User).WithMany(p => p.Conversations)
                 .HasForeignKey(d => d.UserId)
@@ -89,7 +91,26 @@ public partial class SqlDbContext : DbContext,ISqlDbContext
             entity.Property(e => e.CurrencyExchangeRate1)
                 .HasColumnType("decimal(18, 0)")
                 .HasColumnName("CurrencyExchangeRate");
-        });     
+        });
+
+        //modelBuilder.Entity<ImageQuality>(entity =>
+        //{
+        //    entity.ToTable("ImageQuality");
+
+        //    entity.Property(e => e.Id).HasColumnName("id");
+        //    entity.Property(e => e.ImageQuality1)
+        //        .HasMaxLength(50)
+        //        .HasColumnName("ImageQuality");
+        //});
+
+        //modelBuilder.Entity<ImageResolution>(entity =>
+        //{
+        //    entity.ToTable("ImageResolution");
+
+        //    entity.Property(e => e.ImageResolution1)
+        //        .HasMaxLength(50)
+        //        .HasColumnName("ImageResolution");
+        //});
 
         modelBuilder.Entity<Message>(entity =>
         {
@@ -114,17 +135,27 @@ public partial class SqlDbContext : DbContext,ISqlDbContext
             entity.ToTable("Pricing");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.UnitCost).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.ImageAudioPrice).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.InputTokenCost).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.OutputTokenCost).HasColumnType("decimal(10, 2)");
 
             entity.HasOne(d => d.CurrencyExchangeRate).WithMany(p => p.Pricings)
                 .HasForeignKey(d => d.CurrencyExchangeRateId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Pricing_CurrencyExchange");
 
-            entity.HasOne(d => d.ServiceModel).WithMany(p => p.Pricings)
-                .HasForeignKey(d => d.ServiceModelId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Pricing_ServiceModel");
+            //entity.HasOne(d => d.ImageQuality).WithMany(p => p.Pricings)
+            //    .HasForeignKey(d => d.ImageQualityId)
+            //    .HasConstraintName("FK_Pricing_ImageQuality");
+
+            //entity.HasOne(d => d.ImageResolution).WithMany(p => p.Pricings)
+            //    .HasForeignKey(d => d.ImageResolutionId)
+            //    .HasConstraintName("FK_Pricing_ImageResolution");
+
+            //entity.HasOne(d => d.ServiceModel).WithMany(p => p.Pricings)
+            //    .HasForeignKey(d => d.ServiceModelId)
+            //    .OnDelete(DeleteBehavior.ClientSetNull)
+            //    .HasConstraintName("FK_Pricing_ServiceModel");
         });
 
         modelBuilder.Entity<Role>(entity =>
@@ -142,6 +173,22 @@ public partial class SqlDbContext : DbContext,ISqlDbContext
                 .HasMaxLength(50)
                 .HasColumnName("SenderType");
         });
+
+        //modelBuilder.Entity<ServiceModel>(entity =>
+        //{
+        //    entity.ToTable("ServiceModel");
+
+        //    entity.Property(e => e.ModelName).HasMaxLength(150);
+        //});
+
+        //modelBuilder.Entity<TransactionType>(entity =>
+        //{
+        //    entity.ToTable("TransactionType");
+
+        //    entity.Property(e => e.TransactionType1)
+        //        .HasMaxLength(50)
+        //        .HasColumnName("TransactionType");
+        //});
 
         modelBuilder.Entity<User>(entity =>
         {
@@ -183,10 +230,10 @@ public partial class SqlDbContext : DbContext,ISqlDbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UserRequest_Conversation");
 
-            entity.HasOne(d => d.ServiceModel).WithMany(p => p.UserRequests)
-                .HasForeignKey(d => d.ServiceModelId)
+            entity.HasOne(d => d.Pricing).WithMany(p => p.UserRequests)
+                .HasForeignKey(d => d.PricingId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_UserRequest_ServiceModel");
+                .HasConstraintName("FK_UserRequest_Pricing");
 
             entity.HasOne(d => d.User).WithMany(p => p.UserRequests)
                 .HasForeignKey(d => d.UserId)

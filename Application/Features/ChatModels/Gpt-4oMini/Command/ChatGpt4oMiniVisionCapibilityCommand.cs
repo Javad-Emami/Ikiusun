@@ -30,9 +30,10 @@ public class ChatGpt4oMiniVisionCapibilityCommandHandler : IRequestHandler<ChatG
     private readonly IUserService _userService;
     private readonly ISqlDbContext _appDbContext;
     private readonly IWalletService _walletService;
+    private readonly ICostCalculationService _costCalculationService;
     public ChatGpt4oMiniVisionCapibilityCommandHandler(IOpenAI_ChatGPT4oMiniVisionCapability openAi_ChatGpt4oMiniVision,
                                                        IConversationService conversationService, IMessageService messageService,
-                                                       IMapper mapper, IUserService userService, ISqlDbContext appDbContext, IWalletService walletService)
+                                                       IMapper mapper, IUserService userService, ISqlDbContext appDbContext, IWalletService walletService, ICostCalculationService costCalculationService)
     {
         _openAi_ChatGpt4oMiniVision = openAi_ChatGpt4oMiniVision;
         _conversationService = conversationService;
@@ -41,6 +42,7 @@ public class ChatGpt4oMiniVisionCapibilityCommandHandler : IRequestHandler<ChatG
         _userService = userService;
         _appDbContext = appDbContext;
         _walletService = walletService;
+        _costCalculationService = costCalculationService;
     }
     public async Task<Gpt4oMiniResponseDto> Handle(ChatGpt4oMiniVisionCapibilityCommand request, CancellationToken cancellationToken)
     {
@@ -80,14 +82,25 @@ public class ChatGpt4oMiniVisionCapibilityCommandHandler : IRequestHandler<ChatG
 
                 var openAIResult = await _openAi_ChatGpt4oMiniVision.GetChatCompletionAsync(MessagesDtoList);
                 openAIResult.ConversationId = conversation.Id;
-                //TODO: Calling Cost calculation Service
 
-                var newUserRequest = new UserRequest(conversation.UserId, conversation.Id, 
-                                                     (int)ServiceModelEnum.gpt4omini, 
-                                                     openAIResult.InputToken, openAIResult.OutputToken)
-                {
-                    //Cost = 
-                };
+                var costDto = await _costCalculationService.ChatModelCostCalculationAsync(ServiceModelEnum.gpt4omini,
+                                                                                                   openAIResult.InputToken,
+                                                                                                   openAIResult.OutputToken,
+                                                                                                   cancellationToken);
+                var userWallet = await _walletService.BaseQuery
+                                            .Where(w => w.UserId == conversation.UserId && w.TransactionTime >= DateTime.Now.AddDays(-10))
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken) ??
+                                 await _walletService.BaseQuery
+                                            .Where(w => w.UserId == conversation.UserId)
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken);
+
+                var updatedUserWallet = new WalletTransaction(conversation.UserId, (int)TransactionType.Withdrawl, costDto.CostUsage, userWallet.BalanceAmount);
+                await _walletService.AddAsync(updatedUserWallet, cancellationToken);
+
+                var newUserRequest = new UserRequest(conversation.UserId, conversation.Id,                                                    
+                                                     openAIResult.InputToken, openAIResult.OutputToken, costDto.CostUsage,costDto.PricingId);
 
                 conversation.AddUserRequest(newUserRequest);
 
@@ -107,8 +120,8 @@ public class ChatGpt4oMiniVisionCapibilityCommandHandler : IRequestHandler<ChatG
             else
             {
                 var user = await _userService.GetAsync(u => u.Mobile == request.Mobile);
-                var newConversation = new Domain.Entites.Conversation(user.Id, (int)ServiceModelEnum.gpt4omini);
-                
+                var newConversation = new Domain.Entites.Conversation(user.Id,(int)ServiceModelEnum.gpt4omini);
+
                 var messagesList = new List<Message>();
                 var newMessage = new Message(newConversation.Id, request.Data.Text, (int)SenderTypeEnum.user)
                 {
@@ -123,14 +136,23 @@ public class ChatGpt4oMiniVisionCapibilityCommandHandler : IRequestHandler<ChatG
 
                 openAIResult.ConversationId = newConversation.Id;
 
-                //TODO: Calling Cost calculation Service
+                var costDto = await _costCalculationService.ChatModelCostCalculationAsync(ServiceModelEnum.gpt4omini,
+                                                                                                  openAIResult.InputToken,
+                                                                                                  openAIResult.OutputToken,
+                                                                                                  cancellationToken);
+                var userWallet = await _walletService.BaseQuery
+                                            .Where(w => w.UserId == user.Id && w.TransactionTime >= DateTime.Now.AddDays(-10))
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken) ??
+                                await _walletService.BaseQuery
+                                            .Where(w => w.UserId == user.Id)
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken);
 
-                var newUserRequest = new UserRequest(user.Id, newConversation.Id, 
-                                                    (int)ServiceModelEnum.gpt4omini, 
-                                                    openAIResult.InputToken, openAIResult.OutputToken)
-                {
-                    //Cost = 
-                };
+                var updatedUserWallet = new WalletTransaction(user.Id, (int)TransactionType.Withdrawl, costDto.CostUsage, userWallet.BalanceAmount);
+                await _walletService.AddAsync(updatedUserWallet, cancellationToken);
+                var newUserRequest = new UserRequest(user.Id, newConversation.Id,                                                   
+                                                    openAIResult.InputToken, openAIResult.OutputToken,costDto.CostUsage,costDto.PricingId);
 
                 newConversation.AddUserRequest(newUserRequest);
 
@@ -142,7 +164,7 @@ public class ChatGpt4oMiniVisionCapibilityCommandHandler : IRequestHandler<ChatG
 
                 newConversation.AddNewMessage(messagesList);
 
-                await _conversationService.AddAsync(newConversation, cancellationToken);
+                await _conversationService.AddAsync(newConversation,cancellationToken);
 
                 await transaction.CommitAsync();
                 return openAIResult;

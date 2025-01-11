@@ -6,6 +6,7 @@ using Domain.Entites;
 using Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 
 namespace Application.Features.ChatModels.GPT_4o.Command;
 
@@ -29,8 +30,9 @@ public class GPT4oVisionCapabilityCommandHandler : IRequestHandler<GPT4oVisionCa
     private readonly IUserService _userService;
     private readonly ISqlDbContext _appDbContext;
     private readonly IWalletService _walletService;
+    private readonly ICostCalculationService _costCalculationService;
     public GPT4oVisionCapabilityCommandHandler(IOpenAI_ChatGPT4oVisionCapability openAi_ChatGpt4oVision, IConversationService conversationService,
-                                               IMessageService messageService, IMapper mapper, IUserService userService, ISqlDbContext appDbContext, IWalletService walletService)
+                                               IMessageService messageService, IMapper mapper, IUserService userService, ISqlDbContext appDbContext, IWalletService walletService, ICostCalculationService costCalculationService)
     {
         _openAi_ChatGpt4oVision = openAi_ChatGpt4oVision;
         _conversationService = conversationService;
@@ -39,6 +41,7 @@ public class GPT4oVisionCapabilityCommandHandler : IRequestHandler<GPT4oVisionCa
         _userService = userService;
         _appDbContext = appDbContext;
         _walletService = walletService;
+        _costCalculationService = costCalculationService;
     }
     public async Task<Gpt4oResponseDto> Handle(GPT4oVisionCapabilityCommand request, CancellationToken cancellationToken)
     {
@@ -79,14 +82,24 @@ public class GPT4oVisionCapabilityCommandHandler : IRequestHandler<GPT4oVisionCa
                 var openAIResult = await _openAi_ChatGpt4oVision.GetChatCompletionAsync(MessagesDtoList);
                 openAIResult.ConversationId = conversation.Id;
 
-                //TODO: Calling Cost calculation Service
+                var costDto = await _costCalculationService.ChatModelCostCalculationAsync(ServiceModelEnum.gpt4o, 
+                                                                                   openAIResult.InputToken, 
+                                                                                   openAIResult.OutputToken, 
+                                                                                   cancellationToken);
+                var userWallet = await _walletService.BaseQuery
+                                            .Where(w => w.UserId == conversation.UserId && w.TransactionTime >= DateTime.Now.AddDays(-10))
+                                            .OrderByDescending(tt=>tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken) ??
+                                 await _walletService.BaseQuery
+                                            .Where(w => w.UserId == conversation.UserId)
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken);
 
-                var newUserRequest = new UserRequest(conversation.UserId, conversation.Id, 
-                                                    (int)ServiceModelEnum.gpt4o, 
-                                                    openAIResult.InputToken, openAIResult.OutputToken)
-                {     
-                    //Cost = 
-                };
+                var updatedUserWallet = new WalletTransaction(conversation.UserId, (int)TransactionType.Withdrawl, costDto.CostUsage,userWallet.BalanceAmount);
+                await _walletService.AddAsync(updatedUserWallet, cancellationToken);
+                
+                var newUserRequest = new UserRequest(conversation.UserId, conversation.Id,
+                                                    openAIResult.InputToken, openAIResult.OutputToken,costDto.CostUsage, costDto.PricingId);
 
                 conversation.AddUserRequest(newUserRequest);
 
@@ -122,14 +135,24 @@ public class GPT4oVisionCapabilityCommandHandler : IRequestHandler<GPT4oVisionCa
 
                 openAIResult.ConversationId = newConversation.Id;
 
-                //TODO: Calling Cost calculation Service
+                var costDto = await _costCalculationService.ChatModelCostCalculationAsync(ServiceModelEnum.gpt4o,
+                                                                                  openAIResult.InputToken,
+                                                                                  openAIResult.OutputToken,
+                                                                                  cancellationToken);
+                var userWallet = await _walletService.BaseQuery
+                                            .Where(w => w.UserId == user.Id && w.TransactionTime >= DateTime.Now.AddDays(-10))
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken) ??
+                                await _walletService.BaseQuery
+                                            .Where(w => w.UserId == user.Id)
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken);
 
-                var newUserRequest = new UserRequest(user.Id, newConversation.Id, 
-                                                    (int)ServiceModelEnum.gpt4o,
-                                                    openAIResult.InputToken, openAIResult.OutputToken)
-                {
-                    //Cost = 
-                };
+                var updatedUserWallet = new WalletTransaction(user.Id, (int)TransactionType.Withdrawl, costDto.CostUsage, userWallet.BalanceAmount);
+                await _walletService.AddAsync(updatedUserWallet, cancellationToken);
+
+                var newUserRequest = new UserRequest(user.Id, newConversation.Id,                                                    
+                                                    openAIResult.InputToken, openAIResult.OutputToken,costDto.CostUsage, costDto.PricingId);
 
                 newConversation.AddUserRequest(newUserRequest);
 

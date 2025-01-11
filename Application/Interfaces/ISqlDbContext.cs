@@ -20,13 +20,13 @@ public interface ISqlDbContext
 
     DbSet<Role> Roles { get; set; }
 
-    DbSet<SenderType> SenderTypes { get; set; }
+   // DbSet<SenderType> SenderTypes { get; set; }
 
-    DbSet<ServiceModel> ServiceModels { get; set; }
+   // DbSet<ServiceModel> ServiceModels { get; set; }
 
     DbSet<User> Users { get; set; }
 
     DbSet<UserRequest> UserRequests { get; set; }
 
-    DbSet<WalletTransaction> Wallets { get; set; }
+    DbSet<WalletTransaction> WalletTransactions { get; set; }
 }

@@ -2,7 +2,7 @@
 
 namespace Domain.Entites;
 
-public class ServiceModel : IBaseEntity
+public class ServiceModel
 {
     public int Id { get; set; }
 

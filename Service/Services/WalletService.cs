@@ -47,4 +47,9 @@ public class WalletService : BaseService<WalletTransaction, Guid>, IWalletServic
             return true;
         return false;
     }
+
+    public async Task<bool> UpdateUserWalletBalance(Guid userId, decimal costUsage, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
 }

@@ -29,9 +29,10 @@ public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointF
     private readonly IUserService _userService;
     private readonly ISqlDbContext _appDbContext;
     private readonly IWalletService _walletService;
+    private readonly ICostCalculationService _costCalculationService;
     public GPTThreePointFiveTurboQueryHandler(IOpenAi_ChatGPT3Point5Turbo openAi_ChatGpt, IConversationService conversationService,
                                               IMessageService messageService, IMapper mapper, IUserService userService,
-                                              ISqlDbContext appDbContext, IWalletService walletService)
+                                              ISqlDbContext appDbContext, IWalletService walletService, ICostCalculationService costCalculationService)
     {
         _openAi_ChatGpt = openAi_ChatGpt;
         _conversationService = conversationService;
@@ -40,6 +41,7 @@ public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointF
         _userService = userService;
         _appDbContext = appDbContext;
         _walletService = walletService;
+        _costCalculationService = costCalculationService;
     }
     public async Task<ChatResponseDto> Handle(GPTThreePointFiveTurboCommand request, CancellationToken cancellationToken)
     {
@@ -82,13 +84,25 @@ public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointF
 
                 openAIResult.ConversationId = conversation.Id;
 
-                //TODO: Calling Cost calculation Service
+                var costDto = await _costCalculationService.ChatModelCostCalculationAsync(ServiceModelEnum.GptThreePointFiveTurbo,
+                                                                                   openAIResult.InputToken,
+                                                                                   openAIResult.OutputToken,
+                                                                                   cancellationToken);
+                var userWallet = await _walletService.BaseQuery
+                                            .Where(w => w.UserId == conversation.UserId && w.TransactionTime >= DateTime.Now.AddDays(-10))
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken) ??
+                                 await _walletService.BaseQuery
+                                            .Where(w => w.UserId == conversation.UserId)
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken);
 
-                var newUserRequest = new UserRequest(conversation.UserId, conversation.Id, (int)ServiceModelEnum.dalle3, 
-                                                     openAIResult.InputToken, openAIResult.OutputToken)
-                {
-                    //Cost = 
-                };
+                var updatedUserWallet = new WalletTransaction(conversation.UserId, (int)TransactionType.Withdrawl, costDto.CostUsage, userWallet.BalanceAmount);
+                await _walletService.AddAsync(updatedUserWallet, cancellationToken);
+
+                var newUserRequest = new UserRequest(conversation.UserId, conversation.Id, 
+                                                     openAIResult.InputToken, openAIResult.OutputToken,costDto.CostUsage, costDto.PricingId);
+
                 conversation.AddUserRequest(newUserRequest);
 
                 var newAssistantResult = new Message(conversation.Id, openAIResult.Content, (int)SenderTypeEnum.assistant)
@@ -119,14 +133,24 @@ public class GPTThreePointFiveTurboQueryHandler : IRequestHandler<GPTThreePointF
                 var openAIResult = await _openAi_ChatGpt.GetChatCompletionAsync(request.Data.Text);
                 openAIResult.ConversationId = newConversation.Id;
 
-                //TODO: Calling Cost calculation Service
+                var costDto = await _costCalculationService.ChatModelCostCalculationAsync(ServiceModelEnum.GptThreePointFiveTurbo,
+                                                                                   openAIResult.InputToken,
+                                                                                   openAIResult.OutputToken,
+                                                                                   cancellationToken);
+                var userWallet = await _walletService.BaseQuery
+                                            .Where(w => w.UserId == user.Id && w.TransactionTime >= DateTime.Now.AddDays(-10))
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken) ??
+                                await _walletService.BaseQuery
+                                            .Where(w => w.UserId == user.Id)
+                                            .OrderByDescending(tt => tt.TransactionTime)
+                                            .FirstOrDefaultAsync(cancellationToken);
 
-                var newUserRequest = new UserRequest(user.Id, newConversation.Id, 
-                                                    (int)ServiceModelEnum.GptThreePointFiveTurbo, 
-                                                    openAIResult.InputToken, openAIResult.OutputToken)
-                {
-                    //Cost = 
-                };
+                var updatedUserWallet = new WalletTransaction(user.Id, (int)TransactionType.Withdrawl, costDto.CostUsage, userWallet.BalanceAmount);
+                await _walletService.AddAsync(updatedUserWallet, cancellationToken);
+
+                var newUserRequest = new UserRequest(user.Id, newConversation.Id,                                                    
+                                                    openAIResult.InputToken, openAIResult.OutputToken,costDto.CostUsage, costDto.PricingId);
 
                 newConversation.AddUserRequest(newUserRequest);
 

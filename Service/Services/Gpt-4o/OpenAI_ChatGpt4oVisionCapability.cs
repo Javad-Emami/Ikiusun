@@ -18,10 +18,7 @@ public class OpenAI_ChatGpt4oVisionCapability : IOpenAI_ChatGPT4oVisionCapabilit
         _openAIKey = configuration.GetSection("OpenAI")["Key"];
     }
     public async Task<Gpt4oResponseDto> GetChatCompletionAsync(string text)
-    {
-        OpenAIClient openAIClient = new(Environment.GetEnvironmentVariable("OPENAI_API_KEY"));
-        OpenAIFileClient fileClient = openAIClient.GetOpenAIFileClient();
-
+    {        
         ChatClient client = new(model: "gpt-4o", apiKey: _openAIKey);
         var result = await client.CompleteChatAsync(text);
 

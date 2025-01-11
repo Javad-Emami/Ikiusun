@@ -12,12 +12,12 @@ using Domain.Common;
 
 namespace WebApi.Controllers;
 
-public class AccountController : ApiBaseController
+public class accountController : ApiBaseController
 {
     private readonly string _jwtKey;
     private readonly string _issuer;
     private readonly string _audience;
-    public AccountController(IConfiguration configuration)
+    public accountController(IConfiguration configuration)
     {
         _jwtKey = configuration.GetSection("Jwt")["Key"];
         _issuer = configuration.GetSection("Jwt")["Issuer"];
@@ -27,9 +27,8 @@ public class AccountController : ApiBaseController
     [HttpPost("registration")]
     public async Task<IActionResult> RegistrationOrSignIn([FromBody] string mobileNumber, CancellationToken cancellationToken)
     {
-        var userIsExist = await Mediator.Send(new GetUserQuery(mobileNumber),cancellationToken);
-        //if (userIsExist) 
-        return Ok(userIsExist);//("DefaultApi", new { controller = "Account", action = "login" });
+        var userIsExist = await Mediator.Send(new GetUserQuery(mobileNumber),cancellationToken);        
+        return Ok(userIsExist);
     }
 
     [HttpPost("login")]
@@ -75,7 +74,7 @@ public class AccountController : ApiBaseController
             issuer: _issuer,
             audience: _audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddDays(30),
+            expires: DateTime.Now.AddDays(30),
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);

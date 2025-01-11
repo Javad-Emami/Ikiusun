@@ -1,6 +1,6 @@
 ﻿namespace Domain.Enums;
 
-public enum ImageSizeEnum
+public enum ImageResolutionEnum
 {
     W256xH256 = 1,
     W512xH512 = 2,

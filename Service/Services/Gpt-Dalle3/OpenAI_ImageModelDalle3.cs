@@ -21,9 +21,9 @@ public class OpenAI_ImageModelDalle3 : IOpenAI_ImageModelDalle3
                 
         ImageGenerationOptions options = new()
         {
-            Quality = requestDto.Quality == "Standard" ? GeneratedImageQuality.Standard : GeneratedImageQuality.High,
-            Size = requestDto.ImageSize == (int)ImageSizeEnum.W1024xH1024 ? GeneratedImageSize.W1024xH1024 :
-                   requestDto.ImageSize == (int)ImageSizeEnum.W1024xH1792 ? GeneratedImageSize.W1024xH1792 : GeneratedImageSize.W1792xH1024,
+            Quality = requestDto.Quality == (int)ImageQualityEnum.Standard ? GeneratedImageQuality.Standard : GeneratedImageQuality.High,
+            Size = requestDto.ImageSize == (int)ImageResolutionEnum.W1024xH1024 ? GeneratedImageSize.W1024xH1024 :
+                   requestDto.ImageSize == (int)ImageResolutionEnum.W1024xH1792 ? GeneratedImageSize.W1024xH1792 : GeneratedImageSize.W1792xH1024,
             Style = requestDto.Style =="Natural" ? GeneratedImageStyle.Natural : GeneratedImageStyle.Vivid,                 
         };
 
@@ -39,8 +39,8 @@ public class OpenAI_ImageModelDalle3 : IOpenAI_ImageModelDalle3
             ImageUri = imageUri,
             ImageBase64 = base64String,
             ImagePrompt = requestDto.ImagePrompt,
-            ImageSize = requestDto.ImageSize,   
-            Quality = requestDto.Quality,   
+            ImageResolution = requestDto.ImageSize != null ? requestDto.ImageSize : (int)ImageResolutionEnum.W1024xH1024,   
+            ImageQuality = requestDto.Quality != null ? requestDto.Quality : (int)ImageQualityEnum.Standard,   
             Style = requestDto.Style
         };
 

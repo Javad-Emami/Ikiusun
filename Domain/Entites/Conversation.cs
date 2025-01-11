@@ -11,23 +11,24 @@ public class Conversation : IBaseEntity<Guid>
 
     public Conversation(Guid userId, int serviceModelId)
     {
+        Id = Guid.NewGuid();    
         UserId = userId;
         ServiceModelId = serviceModelId;
     }
 
     public Guid Id { get; set; }
 
-    public Guid UserId { get; set; }
+    public Guid UserId { get; private set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-    public int ServiceModelId { get; set; }
+    public int ServiceModelId { get; private set; }
 
     public string? ConversationName { get; set; }
 
     public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 
-    public virtual ServiceModel ServiceModel { get; set; } = null!;
+    //public virtual ServiceModel ServiceModel { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;
 
