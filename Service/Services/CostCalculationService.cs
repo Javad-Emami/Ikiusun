@@ -19,23 +19,54 @@ public class CostCalculationService : ICostCalculationService
         var pricingParameter = await _pricingService.GetAsync(a => a.ServiceModelId == (int)model, cancellationToken);
         var exchangeRate = await _currencyExchangeRateService.ListAsync(cancellationToken);
 
-        var cost = ((inputToken * pricingParameter.InputTokenCost) / 1000000 + (outPutToken * pricingParameter.OutputTokenCost) / 1000000) * 
+        var cost = ((inputToken * pricingParameter.InputTokenCost) / 1000000 + (outPutToken * pricingParameter.OutputTokenCost) / 1000000) *
                    exchangeRate.Select(er => er.CurrencyExchangeRate1).LastOrDefault();
 
         return new CostCalculationDto() { PricingId = pricingParameter.Id, CostUsage = (decimal)cost };
     }
 
-    public async Task<CostCalculationDto> ImageModelCostCalculationAsync(ServiceModelEnum model, int imageResolution, 
+    public async Task<CostCalculationDto> ImageModelCostCalculationAsync(ServiceModelEnum model, int imageResolution,
                                                               int imageQuality, CancellationToken cancellationToken)
     {
         var pricingParameter = await _pricingService.BaseQuery.Where(p => p.ServiceModelId == (int)model &&
-                                                                     p.ImageQualityId == (int)imageQuality && 
+                                                                     p.ImageQualityId == (int)imageQuality &&
                                                                      p.ImageResolutionId == (int)imageResolution)
                                                               .FirstOrDefaultAsync(cancellationToken);
         var exchangeRate = await _currencyExchangeRateService.ListAsync(cancellationToken);
 
-            var cost = (decimal)pricingParameter.ImageAudioPrice * exchangeRate.Select(er => er.CurrencyExchangeRate1).LastOrDefault();
+        var cost = (decimal)pricingParameter.ImageAudioPrice * exchangeRate.Select(er => er.CurrencyExchangeRate1).LastOrDefault();
         return new CostCalculationDto() { PricingId = pricingParameter.Id, CostUsage = cost };
 
+    }
+
+    public async Task<CostCalculationDto> TextToSpeechAsync(ServiceModelEnum model,int audioModel, int textLength, double? audioDuration, CancellationToken cancellationToken)
+    {
+        if ((int)AudioModelEnum.tts_1 == audioModel)
+        {
+            var pricingParameter = await _pricingService.BaseQuery.Where(p => p.ServiceModelId == (int)model &&
+                                                                         p.AudioModelId == (int)audioModel)
+                                                              .FirstOrDefaultAsync(cancellationToken);
+            var exchangeRate = await _currencyExchangeRateService.ListAsync(cancellationToken);
+            var cost = (((decimal)pricingParameter.ImageAudioPrice * textLength) / 1000000) * exchangeRate.Select(er => er.CurrencyExchangeRate1).LastOrDefault();
+            return new CostCalculationDto() { PricingId = pricingParameter.Id, CostUsage = cost };
+        }
+        else if ((int)AudioModelEnum.tts_1_hd == audioModel)
+        {
+            var pricingParameter = await _pricingService.BaseQuery.Where(p => p.ServiceModelId == (int)model &&
+                                                                     p.AudioModelId == (int)audioModel)
+                                                              .FirstOrDefaultAsync(cancellationToken);
+            var exchangeRate = await _currencyExchangeRateService.ListAsync(cancellationToken);
+            var cost = (((decimal)pricingParameter.ImageAudioPrice * textLength) / 1000000) * exchangeRate.Select(er => er.CurrencyExchangeRate1).LastOrDefault();
+            return new CostCalculationDto() { PricingId = pricingParameter.Id, CostUsage = cost };
+        }
+        else
+        {
+            var pricingParameter = await _pricingService.BaseQuery.Where(p => p.ServiceModelId == (int)model &&
+                                                                     p.AudioModelId == (int)audioModel)
+                                                              .FirstOrDefaultAsync(cancellationToken);
+            var exchangeRate = await _currencyExchangeRateService.ListAsync(cancellationToken);
+            var cost = (((decimal)pricingParameter.ImageAudioPrice * (decimal)audioDuration)) * exchangeRate.Select(er => er.CurrencyExchangeRate1).LastOrDefault();
+            return new CostCalculationDto() { PricingId = pricingParameter.Id, CostUsage = cost };
+        }
     }
 }

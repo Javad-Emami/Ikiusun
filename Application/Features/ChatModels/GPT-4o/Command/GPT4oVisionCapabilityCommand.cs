@@ -6,7 +6,6 @@ using Domain.Entites;
 using Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualBasic;
 
 namespace Application.Features.ChatModels.GPT_4o.Command;
 

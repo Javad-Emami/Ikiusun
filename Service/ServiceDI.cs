@@ -1,9 +1,11 @@
 ﻿using Application.Interfaces;
+using Application.Interfaces.Audio;
 using Application.Interfaces.Gpt_01Preview;
 using Application.Interfaces.Gpt_4oMini;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Service.Services;
+using Service.Services.AudioModels;
 using Service.Services.Gpt_01Preview;
 using Service.Services.Gpt_4o;
 using Service.Services.Gpt_4oMini;
@@ -29,6 +31,7 @@ public static class ServiceDI
         services.AddScoped<IPricingService, PricingService>();
         services.AddScoped<ICostCalculationService, CostCalculationService>();
         services.AddScoped<ICurrencyExchangeRateService, CurrencyExchangeRateService>();
+        services.AddScoped<IOpenAi_AudioModels, OpenAi_AudioModel>();
 
         return services;
     }
